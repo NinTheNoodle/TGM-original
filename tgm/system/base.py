@@ -1,18 +1,32 @@
+import operator
+import weakref
+from functools import partial
+
+no_default = object()
+
+
 class Feature(object):
     pass
 
 
 class TagAttribute(Feature):
-    def __init__(self):
+    def __init__(self, setter=lambda x: x, default=no_default):
         self.data = {}
+        self.setter = setter
+        self.default = default
 
     def __get__(self, instance, owner):
-        return self.data[instance]
+        if self.default is not no_default:
+            return self.data.get(instance, self.default)
 
-    def init(self, instance):
-        instance.tags.tags.add(instance)
+        try:
+            return self.data[instance]
+        except KeyError:
+            raise AttributeError("TagAttribute accessed before assigned to")
 
     def __set__(self, instance, value):
+        value = self.setter(value)
+
         if instance in self.data:
             instance.tags.index.remove((self, self.data[instance]))
 
@@ -33,7 +47,10 @@ class EventGroup(object):
         return EventMethod(func, self)
 
     def __getattr__(self, event):
-        return EventTag(event, self)
+        if event not in self._events:
+            raise AttributeError("event '{}' is not defined".format(event))
+
+        return EventTag(name=event, group=self)
 
 
 class EventMethod(Feature):
@@ -46,24 +63,21 @@ class EventMethod(Feature):
         self.group = group
 
     def init(self, instance):
-        self.instance = instance
         EventTag(parent=instance, name=self.function.__name__, group=self.group)
 
-    def __call__(self, *args, **kwargs):
-        self.function(self.instance, *args, **kwargs)
+    def __get__(self, instance, owner):
+        return partial(self.function, instance)
 
 
 class Parent(Feature):
     def __init__(self):
-        self.parents = {}
+        self.parents = weakref.WeakKeyDictionary()
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, cls):
         try:
             return self.parents[instance]
         except KeyError:
-            raise AttributeError("'{}' object has no parent set".format(
-                owner.__name__
-            ))
+            raise AttributeError("'{}' has no parent".format(instance))
 
     def destroy(self, instance):
         self.parents[instance].children.remove(instance)
@@ -78,59 +92,101 @@ class Parent(Feature):
             parent.children.add(instance)
 
 
+class Selection(object):
+    def __init__(self, results):
+        self._results = results
+
+    def __iter__(self):
+        yield from self._results
+
+    def __getattr__(self, item):
+        return AttributeSelection([getattr(result, item)
+                                   for result in self._results])
+
+    def __repr__(self):
+        return "Selection({!r})".format(self._results)
+
+
+class AttributeSelection(object):
+    def __init__(self, results):
+        self._results = results
+
+    def __iter__(self):
+        yield from self._results
+
+    def __call__(self, *args, **kwargs):
+        rtn = []
+        for result in self._results:
+            rtn.append(result(*args, **kwargs))
+        return rtn
+
+    def __getattr__(self, item):
+        return AttributeSelection([getattr(result, item)
+                                   for result in self._results])
+
+
 class TagStore(object):
     def __init__(self, owner):
         self.owner = owner
-        self.tags = set()
         self.child_tags = {}
         self.index = set()
 
-    def register_tag(self, tag, child=None):
-        found = False
-        if child is None:
-            if tag in self.tags:
-                found = True
-            else:
-                self.tags.add(tag)
-        else:
-            if tag in self.child_tags:
-                found = True
-            else:
-                self.child_tags[tag] = child
+    def get(self, query, stop=None):
+        if self.satisfies_query(query):
+            return self.owner
 
-        if not found and self.owner.parent is not None:
-            self.owner.parent.tags.register_tag(tag, self.owner)
+        try:
+            parent = self.owner.parent
+        except AttributeError:
+            raise IndexError("top of tree reached without match")
 
-    def signal(self, event):
-        pass
+        if self.satisfies_query(stop):
+            raise ValueError("stop query fulfilled before a match was found")
 
-    def event(self, event):
-        print(event)
+        return parent.tags.get(query)
 
     def select(self, query):
-        test = self.owner
-        rtn = set()
-
-        for tag_object in test.tags:
-            if tag_object.tags.index >= query.tags.index:
-                rtn.add(test)
-                break
-
-        return rtn
+        return Selection(self._select(query))
 
     def _select(self, query):
         test = self.owner
         rtn = set()
 
-        for tag_object in test.tags:
-            if tag_object.tags >= query.tags:
-                rtn.add(test)
-                break
+        if test.tags.satisfies_query(query):
+            rtn.add(test)
 
         for child in test.children:
-            pass
+            rtn.update(child.tags._select(query))
 
         return rtn
+
+    def _compare_tags(self, tag_obj1, tag_obj2, operation):
+        if tag_obj1.__class__ != tag_obj2.__class__:
+            return False
+
+        return operation(tag_obj1.tags.index, tag_obj2.tags.index)
+
+    def satisfies_query(self, query):
+        if query in (True, False, None):
+            return bool(query)
+
+        if isinstance(query, GameObjectGroup):
+            if query.obj2 is not None:
+                return query.operation(
+                    self.satisfies_query(query.obj1),
+                    self.satisfies_query(query.obj2)
+                )
+            else:
+                return query.operation(
+                    self.satisfies_query(query.obj1)
+                )
+
+        for child in self.owner.children:
+            if (child.__class__ == query.__class__ and
+                    child.tags.index >= query.tags.index):
+                return True
+
+        return False
 
 
 class GameObject(object):
@@ -171,133 +227,54 @@ class GameObject(object):
             if hasattr(feature, "destroy"):
                 feature.destroy(self)
 
+    def __and__(self, other):
+        if isinstance(other, GameObject):
+            return GameObjectGroup(self, other, operator.and_)
+        raise NotImplemented()
+
+    def __or__(self, other):
+        if isinstance(other, GameObject):
+            return GameObjectGroup(self, other, operator.or_)
+        raise NotImplemented()
+
+    def __sub__(self, other):
+        if isinstance(other, GameObject):
+            return GameObjectGroup(self, other, operator.sub)
+        raise NotImplemented()
+
+    def __xor__(self, other):
+        if isinstance(other, GameObject):
+            return GameObjectGroup(self, other, operator.xor)
+        raise NotImplemented()
+
+    def __neg__(self):
+        return GameObjectGroup(self, None, operator.not_)
+
+    def __gt__(self, other):
+        if isinstance(other, GameObject) or other is True:
+            return GameObjectGroup(self, other, operator.gt)
+
+    def __lt__(self, other):
+        if isinstance(other, GameObject) or other is True:
+            return GameObjectGroup(self, other, operator.lt)
+
 
 class EventTag(GameObject):
     name = TagAttribute()
     group = TagAttribute()
 
 
-# class TagStore(object):
-#     def __init__(self, owner):
-#         self._tags = set()
-#         self._child_tags = {}
-#         self.owner = owner
-#
-#     def select(self, query):
-#         return Selection(query, self)
-#
-#     def event(self, event, *args, **kwargs):
-#         rtn = []
-#         for result in self.select(event):
-#             rtn.append(getattr(result, event.name)(*args, **kwargs))
-#         return rtn
-#
-#     def register_tag(self, tag, child=None):
-#         if child is None:
-#             self._tags.add(tag)
-#         else:
-#             children = self._child_tags.setdefault(tag, set())
-#             if child in children:
-#                 return
-#             children.add(child)
-#
-#         parent = self.owner.parent
-#         if parent is not None:
-#             parent.tags.register_tag(tag, self.owner)
-#
-#     def unregister_tag(self, tag, child=None):
-#         if child is None:
-#             self._tags.remove(tag)
-#         else:
-#             self._child_tags[tag].remove(child)
-#             if not self._child_tags[tag]:
-#                 del self._child_tags[tag]
-#
-#         if tag not in self._tags and tag not in self._child_tags:
-#             parent = self.owner.parent
-#             if parent is not None:
-#                 parent.tags.unregister_tag(tag, self.owner)
-#
-#     def __iter__(self):
-#         yield from self._tags
-#
-#     def __contains__(self, item):
-#         from tgm.system.tag import TagGroup
-#         operators = {
-#             "and": operator.and_,
-#             "or": operator.or_,
-#             "less": lambda x, y: x and not y
-#         }
-#
-#         if isinstance(item, TagGroup):
-#             return operators[item.operation](
-#                 item.tag1 in self,
-#                 item.tag2 in self
-#             )
-#         else:
-#             return item in self._tags
-#
-#     def _children_containing(self, query):
-#         from tgm.system.tag import TagGroup
-#
-#         operators = {
-#             "and": set.intersection,
-#             "or": set.union
-#         }
-#
-#         if isinstance(query, TagGroup):
-#             operation = query.operation
-#
-#             if query.operation == "less":
-#                 return self._children_containing(query.tag1)
-#
-#             return operators[operation](
-#                 self._children_containing(query.tag1),
-#                 self._children_containing(query.tag2)
-#             )
-#         else:
-#             return self._child_tags.get(query, set())
-#
-#     def __repr__(self):
-#         return "Tags({})".format(", ".join(repr(x) for x in self))
-#
-#
-# class Selection(object):
-#     def __init__(self, query, tag_store):
-#         self.query = query
-#         self.tag_store = tag_store
-#         self._contents = None
-#
-#     def _resolve(self):
-#         found = set()
-#
-#         for child in self.tag_store._children_containing(self.query):
-#             found.update(child.tags.select(self.query))
-#
-#         if self.query in self.tag_store:
-#             found.add(self.tag_store.owner)
-#
-#         self._contents = found
-#
-#     def select(self, query):
-#         return Selection(self.query & query, self.tag_store)
-#
-#     def event(self, event, *args, **kwargs):
-#         rtn = []
-#         for result in self.select(event):
-#             rtn.append(getattr(result, event.name)(*args, **kwargs))
-#         return rtn
-#
-#     def sorted(self, breath=False):
-#         if breath:
-#             return sorted(self, key=lambda x: len(x.tree_position))
-#
-#         return sorted(self, key=lambda x: x.tree_position)
-#
-#     def __iter__(self):
-#         if self._contents is None:
-#             self._resolve()
-#         yield from self._contents
-#
-#     def __repr__(self):
-#         return "Selection({})".format(", ".join(repr(x) for x in self))
+class GameObjectGroup(GameObject):
+    def init(self, obj1, obj2, operation):
+        self.obj1 = obj1
+        self.obj2 = obj2
+        self.operation = operation
+
+    @property
+    def parent(self):
+        return None
+
+    @parent.setter
+    def parent(self, value):
+        raise AttributeError(
+            "'GameObjectGroup' object cannot have a parent set")

@@ -1,3 +1,9 @@
 from .base import EventGroup
 
-event = EventGroup("update")
+event = EventGroup(
+    "update",
+    "draw",
+    "render",
+    "start",
+    "update"
+)

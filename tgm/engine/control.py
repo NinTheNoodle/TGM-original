@@ -1,7 +1,7 @@
 from tgm.common import GameObject, sys_event
-from tgm.drivers import get_controller
+from tgm.drivers import get_engine
 
-controller = get_controller()
+engine = get_engine()
 
 
 class Updater(GameObject):
@@ -11,4 +11,4 @@ class Updater(GameObject):
             self.parent.tags.select(sys_event.update).update()
             self.parent.tags.select(sys_event.draw).draw()
 
-        controller.tick(update, 60)
+        engine.tick(update, 60)

@@ -5,5 +5,6 @@ event = EventGroup(
     "draw",
     "render",
     "start",
-    "update"
+    "update",
+    "ancestor_update"
 )

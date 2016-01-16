@@ -1,9 +1,4 @@
-def get_renderer():
-    from . import pyglet
-    return pyglet
-
-
-def get_controller():
+def get_engine():
     from . import pyglet
     return pyglet
 

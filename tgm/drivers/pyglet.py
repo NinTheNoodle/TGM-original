@@ -14,7 +14,10 @@ def render_loop(window, func):
 
 def get_image(path):
     if path not in loaded_images:
-        loaded_images[path] = pyglet.image.load(path)
+        image = pyglet.image.load(path)
+        image.anchor_x = image.width // 2
+        image.anchor_y = image.height // 2
+        loaded_images[path] = image
     return loaded_images[path]
 
 
@@ -40,10 +43,6 @@ def init_audio():
 
 
 def init_renderer():
-    pass
-
-
-def init_controller():
     pass
 
 

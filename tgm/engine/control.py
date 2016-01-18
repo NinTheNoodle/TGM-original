@@ -5,10 +5,10 @@ engine = get_engine()
 
 
 class Updater(GameObject):
-    def init(self):
+    def create(self):
         def update():
-            self.parent.tags.select(sys_event.start).start()
-            self.parent.tags.select(sys_event.update).update()
-            self.parent.tags.select(sys_event.draw).draw()
+            self.parent.tags.select(GameObject["start"]).start()
+            self.parent.tags.select(GameObject["update"]).update()
+            self.parent.tags.select(GameObject["draw"]).draw()
 
         engine.tick(update, 60)

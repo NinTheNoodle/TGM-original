@@ -6,19 +6,24 @@ transform_event = EventGroup("get_transform")
 
 
 class Transform(GameObject):
-    x = TagAttribute(default=0)
-    y = TagAttribute(default=0)
-    rotation = TagAttribute(default=0)
-    scale = TagAttribute(default=1)
+    # x = TagAttribute(default=0)
+    # y = TagAttribute(default=0)
+    # rotation = TagAttribute(default=0)
+    # scale = TagAttribute(default=1)
+    def create(self, x=0, y=0, rotation=0, scale=1):
+        self.x = x
+        self.y = y
+        self.rotation = rotation
+        self.scale = scale
 
     @transform_event
     def get_transform(self):
         try:
-            parent_transform = self.parent.parent.tags.get(Transform())
-        except (AttributeError, IndexError):
+            transform = self.parent.parent.tags.get_first(Transform < GameObject)
+        except (AttributeError, StopIteration):
             return self.x, self.y, self.rotation, self.scale
 
-        px, py, pr, ps = parent_transform.transform.get_transform()
+        px, py, pr, ps = transform.get_transform()
         rot = atan2(self.y, self.x)
         dist = sqrt(self.x * self.x + self.y * self.y)
 

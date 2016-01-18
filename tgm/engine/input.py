@@ -15,4 +15,4 @@ class MouseInput(GameObject):
 
     @sys_event
     def ancestor_update(self):
-        print(self.tags.get(Window()))
+        print(self.tags.get(Window < GameObject))

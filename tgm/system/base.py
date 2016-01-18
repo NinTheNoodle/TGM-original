@@ -50,7 +50,7 @@ class EventGroup(object):
         if event not in self._events:
             raise AttributeError("event '{}' is not defined".format(event))
 
-        return EventTag(name=event, group=self)
+        return EventTag["name":event, "group":self]
 
 
 class EventMethod(Feature):
@@ -67,29 +67,6 @@ class EventMethod(Feature):
 
     def __get__(self, instance, owner):
         return partial(self.function, instance)
-
-
-class Parent(Feature):
-    def __init__(self):
-        self.parents = weakref.WeakKeyDictionary()
-
-    def __get__(self, instance, cls):
-        try:
-            return self.parents[instance]
-        except KeyError:
-            raise AttributeError("'{}' has no parent".format(instance))
-
-    def destroy(self, instance):
-        self.parents[instance].children.remove(instance)
-
-    def __set__(self, instance, parent):
-        if self.parents.get(instance, None) is not None:
-            self.parents[instance].children.remove(instance)
-
-        self.parents[instance] = parent
-
-        if parent is not None:
-            parent.children.add(instance)
 
 
 class Selection(object):
@@ -131,73 +108,256 @@ class TagStore(object):
         self.child_tags = {}
         self.index = set()
 
-    def get(self, query, stop=None):
-        if self.satisfies_query(query):
-            return self.owner
+    def get_all(self, query):
+        return Selection(get_all(self.owner, query))
 
-        try:
-            parent = self.owner.parent
-        except AttributeError:
-            raise IndexError("top of tree reached without match")
-
-        if self.satisfies_query(stop):
-            raise ValueError("stop query fulfilled before a match was found")
-
-        return parent.tags.get(query)
+    def get_first(self, query):
+        return next(iter(get_all(self.owner, query)))
 
     def select(self, query):
-        return Selection(self._select(query))
-
-    def _select(self, query):
-        test = self.owner
-        rtn = set()
-
-        if test.tags.satisfies_query(query):
-            rtn.add(test)
-
-        for child in test.children:
-            rtn.update(child.tags._select(query))
-
-        return rtn
-
-    def _compare_tags(self, tag_obj1, tag_obj2, operation):
-        if tag_obj1.__class__ != tag_obj2.__class__:
-            return False
-
-        return operation(tag_obj1.tags.index, tag_obj2.tags.index)
+        return Selection(select_all(self.owner, query))
 
     def satisfies_query(self, query):
-        if query in (True, False, None):
-            return bool(query)
+        return has_tags(self.owner, query)
 
-        if isinstance(query, GameObjectGroup):
-            if query.obj2 is not None:
-                return query.operation(
-                    self.satisfies_query(query.obj1),
-                    self.satisfies_query(query.obj2)
-                )
-            else:
-                return query.operation(
-                    self.satisfies_query(query.obj1)
+
+def get_all(candidate, query, stop=None):
+    rtn = run_query(candidate, query)
+    if rtn:
+        return rtn
+
+    if candidate.parent is None:
+        return set()
+
+    if stop is not None and has_tags(candidate, stop):
+        return set()
+
+    return get_all(candidate.parent, query)
+
+
+def select_all(candidate, query):
+    rtn = set()
+
+    rtn.update(run_query(candidate, query))
+
+    for child in candidate.children:
+        rtn.update(select_all(child, query))
+
+    return rtn
+
+
+def run_query(candidate, query):
+    simple_operations = {
+        "&": set.intersection,
+        "|": set.union,
+        "^": set.symmetric_difference,
+        "-": set.difference
+    }
+
+    if isinstance(query, TagGroup):
+        operation = query.operation
+        obj1 = query.obj1
+        obj2 = query.obj2
+        if operation in simple_operations:
+            return simple_operations[operation](run_query(candidate, obj1),
+                                                run_query(candidate, obj2))
+
+        if operation == "<":
+            if has_tags(candidate, obj1) and has_tags(candidate.parent, obj2):
+                return run_query(candidate, obj1)
+            if has_tags(candidate, obj2) and any(
+                    has_tags(child, obj1) for child in candidate.children):
+                return set.union(
+                        *(
+                            run_query(child, obj1)
+                            for child in candidate.children
+                        )
                 )
 
-        for child in self.owner.children:
-            if (child.__class__ == query.__class__ and
-                    child.tags.index >= query.tags.index):
+        if operation == ">":
+            if has_tags(candidate, obj2) and has_tags(candidate.parent, obj1):
+                return run_query(candidate.parent, obj1)
+            if has_tags(candidate, obj1) and any(
+                    has_tags(child, obj2) for child in candidate.children):
+                return run_query(candidate, obj1)
+
+        raise ValueError("Unsupported operator on tag")
+
+    if isinstance(query, Tag):
+        if not isinstance(candidate, query._tgm_class):
+            return set()
+
+        for item in query._tgm_test_attributes:
+            if not hasattr(candidate, item):
+                return set()
+
+        for key, value in query._tgm_attributes.items():
+            if getattr(candidate, key, no_default) != value:
+                return set()
+
+        for subquery in query._tgm_children:
+            if not any(has_tags(child, subquery)
+                       for child in candidate.children):
+                return set()
+
+        return {candidate}
+
+    if isinstance(candidate, query):
+        return {candidate}
+
+    return set()
+
+
+def has_tags(candidate, query):
+    simple_operations = {
+        "&": operator.and_,
+        "|": operator.or_,
+        "^": operator.xor
+    }
+
+    if isinstance(query, TagGroup):
+        operation = query.operation
+        obj1 = query.obj1
+        obj2 = query.obj2
+        if operation in simple_operations:
+            return simple_operations[operation](has_tags(candidate, obj1),
+                                                has_tags(candidate, obj2))
+
+        if operation == "-":
+            if obj2 is None:
+                return not has_tags(candidate, obj1)
+            return has_tags(candidate, obj1) and not has_tags(candidate, obj2)
+
+        if operation == "<":
+            obj1, obj2 = obj2, obj1
+            operation = ">"
+
+        if operation == ">":
+            if has_tags(candidate, obj2) and has_tags(candidate.parent, obj1):
                 return True
+            return has_tags(candidate, obj1) and any(
+                    has_tags(child, obj2)
+                    for child in candidate.children
+            )
 
-        return False
+        raise ValueError("Unsupported operator on tag")
+
+    if isinstance(query, Tag):
+        if not isinstance(candidate, query._tgm_class):
+            return False
+
+        for item in query._tgm_test_attributes:
+            if not hasattr(candidate, item):
+                return False
+
+        for key, value in query._tgm_attributes.items():
+            if getattr(candidate, key, no_default) != value:
+                return False
+
+        for subquery in query._tgm_children:
+            if not any(has_tags(child, subquery)
+                       for child in candidate.children):
+                return False
+
+        return True
+
+    return isinstance(candidate, query)
 
 
-class GameObject(object):
-    parent = Parent()
+class BaseTag(object):
+    def __and__(self, other):
+        return TagGroup(self, other, "&")
 
-    def __init__(self, *args, **kwargs):
+    def __or__(self, other):
+        return TagGroup(self, other, "|")
+
+    def __sub__(self, other):
+        return TagGroup(self, other, "-")
+
+    def __xor__(self, other):
+        return TagGroup(self, other, "^")
+
+    def __neg__(self):
+        return TagGroup(GameObject, self, "-")
+
+    def __gt__(self, other):
+        return TagGroup(self, other, ">")
+
+    def __lt__(self, other):
+        return TagGroup(self, other, "<")
+
+
+class Tag(BaseTag):
+    def __init__(self, cls, attributes, test_attributes, children):
+        self._tgm_attributes = attributes.copy()
+        self._tgm_test_attributes = test_attributes.copy()
+        self._tgm_children = children
+        self._tgm_class = cls
+
+    def __repr__(self):
+        return "Tag:{}({}{}{}{}{})".format(
+                self._tgm_class.__name__,
+                ", ".join(repr(child) for child in self._tgm_children),
+                ", "
+                if self._tgm_children and self._tgm_test_attributes else "",
+                ", ".join(repr(item) for item in self._tgm_test_attributes),
+                ", "
+                if self._tgm_test_attributes and self._tgm_attributes else "",
+                ", ".join(
+                        "{}={!r}".format(key, value)
+                        for key, value in self._tgm_attributes.items()
+                        if key is not "__class__"
+                )
+        )
+
+
+class TagGroup(BaseTag):
+    def __init__(self, obj1, obj2, operation):
+        self.obj1 = obj1
+        self.obj2 = obj2
+        self.operation = operation
+
+    def __repr__(self):
+        if self.operation == "u-":
+            return "(-{!r})".format(self.obj2)
+
+        return "({!r} {} {!r})".format(self.obj1, self.operation, self.obj2)
+
+
+class MetaGameObject(type, BaseTag):
+    def __getitem__(cls, args):
+        if not isinstance(args, tuple):
+            args = (args,)
+
+        attributes = {}
+        test_attributes = []
+        children = []
+
+        for arg in args:
+            if isinstance(arg, slice):
+                if arg.step is not None:
+                    raise ValueError(
+                            "Too many colons in tag attribute assignment")
+                if arg.start is None:
+                    raise ValueError(
+                            "Misplaced colon in tag attribute assignment")
+                if not isinstance(arg.start, str):
+                    raise ValueError("Tag attribute name must be a string")
+                attributes[arg.start] = arg.stop
+            elif isinstance(arg, str):
+                test_attributes.append(arg)
+            else:
+                children.append(arg)
+
+        return Tag(cls, attributes, test_attributes, children)
+
+
+class GameObject(object, metaclass=MetaGameObject):
+    def __init__(self, parent, *args, **kwargs):
         self.children = set()
         self.tags = TagStore(self)
         self.features = []
-
-        set_features = {}
+        self.parent = parent
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -206,8 +366,6 @@ class GameObject(object):
         for name, value in class_dict.items():
             if isinstance(value, Feature):
                 self.features.append(value)
-                if name in kwargs:
-                    set_features[name] = kwargs.pop(name)
 
         self.init_args = args
         self.init_kwargs = kwargs
@@ -216,65 +374,27 @@ class GameObject(object):
             if hasattr(feature, "init"):
                 feature.init(self)
 
-        for name, value in set_features.items():
-            setattr(self, name, value)
-
-        if hasattr(self, "init"):
-            self.init(*args, **kwargs)
+        if hasattr(self, "create"):
+            self.create(*args, **kwargs)
 
     def destroy(self):
         for feature in self.features:
             if hasattr(feature, "destroy"):
                 feature.destroy(self)
 
-    def __and__(self, other):
-        if isinstance(other, GameObject):
-            return GameObjectGroup(self, other, operator.and_)
-        raise NotImplemented()
+    @property
+    def parent(self):
+        return self._tgm_parent
 
-    def __or__(self, other):
-        if isinstance(other, GameObject):
-            return GameObjectGroup(self, other, operator.or_)
-        raise NotImplemented()
-
-    def __sub__(self, other):
-        if isinstance(other, GameObject):
-            return GameObjectGroup(self, other, operator.sub)
-        raise NotImplemented()
-
-    def __xor__(self, other):
-        if isinstance(other, GameObject):
-            return GameObjectGroup(self, other, operator.xor)
-        raise NotImplemented()
-
-    def __neg__(self):
-        return GameObjectGroup(self, None, operator.not_)
-
-    def __gt__(self, other):
-        if isinstance(other, GameObject) or other is True:
-            return GameObjectGroup(self, other, operator.gt)
-
-    def __lt__(self, other):
-        if isinstance(other, GameObject) or other is True:
-            return GameObjectGroup(self, other, operator.lt)
-
+    @parent.setter
+    def parent(self, parent):
+        if getattr(self, "parent", None) is not None:
+            self.parent.children.remove(self)
+        self._tgm_parent = parent
+        if parent is not None:
+            parent.children.add(self)
 
 class EventTag(GameObject):
     name = TagAttribute()
     group = TagAttribute()
 
-
-class GameObjectGroup(GameObject):
-    def init(self, obj1, obj2, operation):
-        self.obj1 = obj1
-        self.obj2 = obj2
-        self.operation = operation
-
-    @property
-    def parent(self):
-        return None
-
-    @parent.setter
-    def parent(self, value):
-        raise AttributeError(
-            "'GameObjectGroup' object cannot have a parent set")

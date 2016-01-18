@@ -6,11 +6,16 @@ engine = get_engine()
 
 
 class Window(GameObject):
-    def init(self):
+    settings = {
+        "width": 800,
+        "height": 600
+    }
+
+    def create(self, width, height):
         self.window = engine.get_window()
 
         def on_draw():
-            self.parent.tags.select(sys_event.render).render()
+            self.parent.tags.select(GameObject["render"]).render()
 
         engine.render_loop(self.window, on_draw)
 
@@ -18,7 +23,7 @@ class Window(GameObject):
 class Sprite(GameObject):
     visible = TagAttribute(default=True)
 
-    def init(self, path):
+    def create(self, path):
         self.image = engine.get_image(path)
         self.sprite = engine.get_sprite(self.image)
         self.transform = Transform(parent=self)

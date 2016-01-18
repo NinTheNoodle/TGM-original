@@ -15,7 +15,7 @@ class Window(GameObject):
         self.window = engine.get_window()
 
         def on_draw():
-            self.parent.tags.select(GameObject["render"]).render()
+            self.parent.tags.select(GameObject[sys_event.render]).render()
 
         engine.render_loop(self.window, on_draw)
 

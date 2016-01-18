@@ -6,8 +6,7 @@ engine = get_engine()
 
 
 class MouseInput(GameObject):
-    def __init__(self, *args, **kwargs):
-        super(MouseInput, self).__init__(*args, **kwargs)
+    def create(self):
         self.down = set()
         self.pressed = set()
         self.released = set()

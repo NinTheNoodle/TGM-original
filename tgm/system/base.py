@@ -181,7 +181,7 @@ class EventMethod(Feature):
         self.group = group
 
     def init(self, instance):
-        EventTag(parent=instance, name=self.function.__name__, group=self.group)
+        EventTag(instance, self.function.__name__, self.group)
 
     def __get__(self, instance, owner):
         return partial(self.function, instance)
@@ -369,5 +369,7 @@ class GameObject(object, metaclass=MetaGameObject):
 
 
 class EventTag(GameObject):
-    pass
+    def create(self, name, group):
+        self.name = name
+        self.group = group
 

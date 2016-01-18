@@ -1,4 +1,4 @@
-from .base import GameObject, TagAttribute, EventTag
+from .base import GameObject, EventTag
 
 
 class World(GameObject):

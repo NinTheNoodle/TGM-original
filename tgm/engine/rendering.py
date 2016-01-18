@@ -1,4 +1,4 @@
-from tgm.common import GameObject, sys_event, TagAttribute
+from tgm.common import GameObject, sys_event
 from tgm.engine.transform import Transform
 from tgm.drivers import get_engine
 
@@ -21,9 +21,8 @@ class Window(GameObject):
 
 
 class Sprite(GameObject):
-    visible = TagAttribute(default=True)
-
     def create(self, path):
+        self.visible = True
         self.image = engine.get_image(path)
         self.sprite = engine.get_sprite(self.image)
         self.transform = Transform(parent=self)

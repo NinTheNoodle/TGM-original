@@ -5,122 +5,6 @@ from functools import partial
 no_default = object()
 
 
-class Feature(object):
-    pass
-
-
-class TagAttribute(Feature):
-    def __init__(self, setter=lambda x: x, default=no_default):
-        self.data = {}
-        self.setter = setter
-        self.default = default
-
-    def __get__(self, instance, owner):
-        if self.default is not no_default:
-            return self.data.get(instance, self.default)
-
-        try:
-            return self.data[instance]
-        except KeyError:
-            raise AttributeError("TagAttribute accessed before assigned to")
-
-    def __set__(self, instance, value):
-        value = self.setter(value)
-
-        if instance in self.data:
-            instance.tags.index.remove((self, self.data[instance]))
-
-        self.data[instance] = value
-        instance.tags.index.add((self, value))
-
-
-class EventGroup(object):
-    def __init__(self, *events):
-        self._events = frozenset(events)
-
-    def __call__(self, func):
-        func_name = func.__name__
-
-        if func_name not in self._events:
-            raise AttributeError("event '{}' is not defined".format(func_name))
-
-        return EventMethod(func, self)
-
-    def __getattr__(self, event):
-        if event not in self._events:
-            raise AttributeError("event '{}' is not defined".format(event))
-
-        return EventTag["name":event, "group":self]
-
-
-class EventMethod(Feature):
-    """
-    Substitute for a normal Python method
-    automatically tags its own existence
-    """
-    def __init__(self, function, group):
-        self.function = function
-        self.group = group
-
-    def init(self, instance):
-        EventTag(parent=instance, name=self.function.__name__, group=self.group)
-
-    def __get__(self, instance, owner):
-        return partial(self.function, instance)
-
-
-class Selection(object):
-    def __init__(self, results):
-        self._results = results
-
-    def __iter__(self):
-        yield from self._results
-
-    def __getattr__(self, item):
-        return AttributeSelection([getattr(result, item)
-                                   for result in self._results])
-
-    def __repr__(self):
-        return "Selection({!r})".format(self._results)
-
-
-class AttributeSelection(object):
-    def __init__(self, results):
-        self._results = results
-
-    def __iter__(self):
-        yield from self._results
-
-    def __call__(self, *args, **kwargs):
-        rtn = []
-        for result in self._results:
-            rtn.append(result(*args, **kwargs))
-        return rtn
-
-    def __getattr__(self, item):
-        return AttributeSelection([getattr(result, item)
-                                   for result in self._results])
-
-
-class TagStore(object):
-    def __init__(self, owner):
-        self.owner = owner
-        self.child_tags = {}
-        self.index = set()
-
-    def get_all(self, query):
-        return Selection(get_all(self.owner, query))
-
-    def get_first(self, query):
-        return next(iter(get_all(self.owner, query)))
-
-    def select(self, query):
-        return Selection(select_all(self.owner, query))
-
-    def satisfies_query(self, query):
-        return has_tags(self.owner, query)
-
-
 def get_all(candidate, query, stop=None):
     rtn = run_query(candidate, query)
     if rtn:
@@ -264,6 +148,95 @@ def has_tags(candidate, query):
     return isinstance(candidate, query)
 
 
+class Feature(object):
+    pass
+
+
+class EventGroup(object):
+    def __init__(self, *events):
+        self._events = frozenset(events)
+
+    def __call__(self, func):
+        func_name = func.__name__
+
+        if func_name not in self._events:
+            raise AttributeError("event '{}' is not defined".format(func_name))
+
+        return EventMethod(func, self)
+
+    def __getattr__(self, event):
+        if event not in self._events:
+            raise AttributeError("event '{}' is not defined".format(event))
+
+        return EventTag["name":event, "group":self]
+
+
+class EventMethod(Feature):
+    """
+    Substitute for a normal Python method
+    automatically tags its own existence
+    """
+    def __init__(self, function, group):
+        self.function = function
+        self.group = group
+
+    def init(self, instance):
+        EventTag(parent=instance, name=self.function.__name__, group=self.group)
+
+    def __get__(self, instance, owner):
+        return partial(self.function, instance)
+
+
+class Selection(object):
+    def __init__(self, results):
+        self._results = results
+
+    def __iter__(self):
+        yield from self._results
+
+    def __getattr__(self, item):
+        return AttributeSelection([getattr(result, item)
+                                   for result in self._results])
+
+    def __repr__(self):
+        return "Selection({!r})".format(self._results)
+
+
+class AttributeSelection(object):
+    def __init__(self, results):
+        self._results = results
+
+    def __iter__(self):
+        yield from self._results
+
+    def __call__(self, *args, **kwargs):
+        rtn = []
+        for result in self._results:
+            rtn.append(result(*args, **kwargs))
+        return rtn
+
+    def __getattr__(self, item):
+        return AttributeSelection([getattr(result, item)
+                                   for result in self._results])
+
+
+class TagStore(object):
+    def __init__(self, owner):
+        self.owner = owner
+
+    def get_all(self, query):
+        return Selection(get_all(self.owner, query))
+
+    def get_first(self, query):
+        return next(iter(get_all(self.owner, query)))
+
+    def select(self, query):
+        return Selection(select_all(self.owner, query))
+
+    def satisfies_query(self, query):
+        return has_tags(self.owner, query)
+
+
 class BaseTag(object):
     def __and__(self, other):
         return TagGroup(self, other, "&")
@@ -394,7 +367,7 @@ class GameObject(object, metaclass=MetaGameObject):
         if parent is not None:
             parent.children.add(self)
 
+
 class EventTag(GameObject):
-    name = TagAttribute()
-    group = TagAttribute()
+    pass
 

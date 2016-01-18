@@ -1,4 +1,4 @@
-from tgm.common import GameObject, TagAttribute, EventGroup, sys_tags
+from tgm.common import GameObject, EventGroup, sys_tags
 from math import sin, cos, atan2, sqrt, radians
 
 
@@ -6,10 +6,6 @@ transform_event = EventGroup("get_transform")
 
 
 class Transform(GameObject):
-    # x = TagAttribute(default=0)
-    # y = TagAttribute(default=0)
-    # rotation = TagAttribute(default=0)
-    # scale = TagAttribute(default=1)
     def create(self, x=0, y=0, rotation=0, scale=1):
         self.x = x
         self.y = y
@@ -19,7 +15,9 @@ class Transform(GameObject):
     @transform_event
     def get_transform(self):
         try:
-            transform = self.parent.parent.tags.get_first(Transform < GameObject)
+            transform = self.parent.parent.tags.get_first(
+                    Transform < GameObject
+            )
         except (AttributeError, StopIteration):
             return self.x, self.y, self.rotation, self.scale
 

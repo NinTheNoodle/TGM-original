@@ -5,7 +5,10 @@ from functools import partial
 no_default = object()
 
 
-def get_all(candidate, query, stop=None):
+def get_all(candidate, query, stop=None, abort=None):
+    if abort is not None and has_tags(candidate, abort):
+        return set()
+
     rtn = run_query(candidate, query)
     if rtn:
         return rtn
@@ -16,19 +19,20 @@ def get_all(candidate, query, stop=None):
     if stop is not None and has_tags(candidate, stop):
         return set()
 
-    return get_all(candidate.parent, query)
+    return get_all(candidate.parent, query, stop, abort)
 
 
-def select_all(candidate, query, stop=None):
-    rtn = set()
+def select_all(candidate, query, stop=None, abort=None):
+    if abort is not None and has_tags(candidate, abort):
+        return set()
 
-    rtn.update(run_query(candidate, query))
+    rtn = run_query(candidate, query)
 
     if stop is not None and has_tags(candidate, stop):
         return rtn
 
     for child in candidate.children:
-        rtn.update(select_all(child, query))
+        rtn.update(select_all(child, query, stop, abort))
 
     return rtn
 
@@ -94,6 +98,9 @@ def run_query(candidate, query):
 
         return {candidate}
 
+    if isinstance(query, GameObject):
+        return set()
+
     if isinstance(candidate, query):
         return {candidate}
 
@@ -155,6 +162,9 @@ def has_tags(candidate, query):
                 return False
 
         return True
+
+    if isinstance(query, GameObject):
+        return False
 
     return isinstance(candidate, query)
 
@@ -235,17 +245,17 @@ class TagStore(object):
     def __init__(self, owner):
         self.owner = owner
 
-    def get_all(self, query, stop=None):
-        return Selection(get_all(self.owner, query, stop))
+    def get_all(self, query, stop=None, abort=None):
+        return Selection(get_all(self.owner, query, stop, abort))
 
-    def get_first(self, query, stop=None):
+    def get_first(self, query, stop=None, abort=None):
         try:
-            return next(iter(get_all(self.owner, query, stop)))
+            return next(iter(get_all(self.owner, query, stop, abort)))
         except StopIteration:
             raise IndexError("No results found in get_first")
 
-    def select(self, query):
-        return Selection(select_all(self.owner, query))
+    def select(self, query, stop=None, abort=None):
+        return Selection(select_all(self.owner, query, stop, abort))
 
     def satisfies_query(self, query):
         return has_tags(self.owner, query)

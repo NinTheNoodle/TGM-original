@@ -6,7 +6,13 @@ engine = get_engine()
 
 
 class RenderContext(GameObject):
-    pass
+    @sys_event
+    def render(self):
+        self.parent.tags.select(
+            GameObject[sys_event.render],
+            stop=GameObject[RenderContext] - GameObject[self],
+            abort=self
+        ).render()
 
 
 class Window(RenderContext):
@@ -20,7 +26,7 @@ class Window(RenderContext):
         self.window.set_caption("TGM Sample")
 
         def on_draw():
-            self.parent.tags.select(GameObject[sys_event.render]).render()
+            self.render()
 
         def on_mouse_move(x, y):
             self.parent.tags.select(
@@ -40,5 +46,6 @@ class Sprite(GameObject):
 
     @sys_event
     def render(self):
-        x, y, rot, scale = self.transform.get_transform(GameObject[RenderContext])
+        x, y, rot, scale = self.transform.get_transform(
+                GameObject[RenderContext])
         engine.draw_sprite(self.sprite, x, y, rot, scale)

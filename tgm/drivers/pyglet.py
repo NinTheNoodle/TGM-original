@@ -2,14 +2,34 @@ import pyglet
 
 
 loaded_images = {}
+mouse_pos = {}
 
 
-def get_window():
-    return pyglet.window.Window()
+def get_window(width, height):
+    window = pyglet.window.Window(width, height)
+
+    @window.event
+    def on_mouse_press(x, y, button, modifiers):
+        pass
+
+    return window
+
+
+def mouse_move_event(window, func):
+    @window.event
+    def on_mouse_motion(x, y, dx, dy):
+        func(x, y)
+
+    @window.event
+    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        func(x, y)
 
 
 def render_loop(window, func):
-    window.event(func)
+    @window.event
+    def on_draw():
+        window.clear()
+        func()
 
 
 def get_image(path):
@@ -26,8 +46,8 @@ def get_sprite(image):
 
 
 def draw_sprite(sprite, x, y, rotation, scale):
-    sprite._x = x
-    sprite._y = y
+    sprite._x = round(x)
+    sprite._y = round(y)
     sprite._rotation = rotation
     sprite._scale = scale
     sprite._update_position()

@@ -5,19 +5,30 @@ from tgm.drivers import get_engine
 engine = get_engine()
 
 
-class Window(GameObject):
+class RenderContext(GameObject):
+    pass
+
+
+class Window(RenderContext):
     settings = {
         "width": 800,
         "height": 600
     }
 
     def create(self, width, height):
-        self.window = engine.get_window()
+        self.window = engine.get_window(width, height)
+        self.window.set_caption("TGM Sample")
 
         def on_draw():
             self.parent.tags.select(GameObject[sys_event.render]).render()
 
+        def on_mouse_move(x, y):
+            self.parent.tags.select(
+                    GameObject[sys_event.mouse_move]
+            ).mouse_move(x, y)
+
         engine.render_loop(self.window, on_draw)
+        engine.mouse_move_event(self.window, on_mouse_move)
 
 
 class Sprite(GameObject):
@@ -29,5 +40,5 @@ class Sprite(GameObject):
 
     @sys_event
     def render(self):
-        x, y, rot, scale = self.transform.get_transform()
+        x, y, rot, scale = self.transform.get_transform(GameObject[RenderContext])
         engine.draw_sprite(self.sprite, x, y, rot, scale)

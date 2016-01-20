@@ -4,7 +4,7 @@ event = EventGroup(
     "update",
     "draw",
     "render",
-    "start",
     "update",
-    "ancestor_update"
+    "ancestor_update",
+    "mouse_move"
 )

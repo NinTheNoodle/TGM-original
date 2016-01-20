@@ -7,7 +7,6 @@ engine = get_engine()
 class Updater(GameObject):
     def create(self):
         def update():
-            self.parent.tags.select(GameObject[sys_event.start]).start()
             self.parent.tags.select(GameObject[sys_event.update]).update()
             self.parent.tags.select(GameObject[sys_event.draw]).draw()
 

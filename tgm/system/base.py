@@ -19,10 +19,13 @@ def get_all(candidate, query, stop=None):
     return get_all(candidate.parent, query)
 
 
-def select_all(candidate, query):
+def select_all(candidate, query, stop=None):
     rtn = set()
 
     rtn.update(run_query(candidate, query))
+
+    if stop is not None and has_tags(candidate, stop):
+        return rtn
 
     for child in candidate.children:
         rtn.update(select_all(child, query))
@@ -31,6 +34,9 @@ def select_all(candidate, query):
 
 
 def run_query(candidate, query):
+    if query is candidate:
+        return {candidate}
+
     simple_operations = {
         "&": set.intersection,
         "|": set.union,
@@ -57,6 +63,7 @@ def run_query(candidate, query):
                             for child in candidate.children
                         )
                 )
+            return set()
 
         if operation == ">":
             if has_tags(candidate, obj2) and has_tags(candidate.parent, obj1):
@@ -64,6 +71,7 @@ def run_query(candidate, query):
             if has_tags(candidate, obj1) and any(
                     has_tags(child, obj2) for child in candidate.children):
                 return run_query(candidate, obj1)
+            return set()
 
         raise ValueError("Unsupported operator on tag")
 
@@ -93,6 +101,9 @@ def run_query(candidate, query):
 
 
 def has_tags(candidate, query):
+    if query is candidate:
+        return True
+
     simple_operations = {
         "&": operator.and_,
         "|": operator.or_,
@@ -224,11 +235,14 @@ class TagStore(object):
     def __init__(self, owner):
         self.owner = owner
 
-    def get_all(self, query):
-        return Selection(get_all(self.owner, query))
+    def get_all(self, query, stop=None):
+        return Selection(get_all(self.owner, query, stop))
 
-    def get_first(self, query):
-        return next(iter(get_all(self.owner, query)))
+    def get_first(self, query, stop=None):
+        try:
+            return next(iter(get_all(self.owner, query, stop)))
+        except StopIteration:
+            raise IndexError("No results found in get_first")
 
     def select(self, query):
         return Selection(select_all(self.owner, query))
@@ -361,11 +375,19 @@ class GameObject(object, metaclass=MetaGameObject):
 
     @parent.setter
     def parent(self, parent):
+        update = hasattr(self, "parent")
+
         if getattr(self, "parent", None) is not None:
             self.parent.children.remove(self)
         self._tgm_parent = parent
         if parent is not None:
             parent.children.add(self)
+
+        if update:
+            from tgm.common import sys_event
+            self.tags.select(
+                    GameObject[sys_event.ancestor_update]
+            ).ancestor_update()
 
 
 class EventTag(GameObject):

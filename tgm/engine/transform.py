@@ -1,25 +1,67 @@
 from tgm.common import GameObject, common_ancestor
 from math import sin, cos, atan2, sqrt, radians
+from tgm.engine.events import event
 
 
 class Transform(GameObject):
     def create(self, x=0, y=0, rotation=0, scale=1):
-        self.x = x
-        self.y = y
-        self.rotation = rotation
-        self.scale = scale
+        self._x, self._y, self._rotation, self._scale = (
+            x, y, rotation, scale
+        )
 
     @property
     def transform(self):
         return self.x, self.y, self.rotation, self.scale
 
+    @transform.setter
+    def transform(self, transform):
+        self._x, self._y, self._rotation, self._scale = transform
+        self.send_update()
+
     @property
     def parent_transform(self):
         return self.get_parent_transform()
 
-    @transform.setter
-    def transform(self, transform):
-        self.x, self.y, self.rotation, self.scale = transform
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self.send_update()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self.send_update()
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+        self.send_update()
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+        self.send_update()
+
+    def send_update(self):
+        self.parent.tags.select(
+                GameObject[event.transform_changed]
+        ).transform_changed()
 
     def relative_transform(self, other):
         ancestor = common_ancestor(self, other)
@@ -65,49 +107,46 @@ class Transform(GameObject):
         return accumulated_transform
 
     def apply(self, x, y, rotation, scale):
-        return self.apply_transform(
+        return apply_transform(
                 (x, y, rotation, scale),
                 self.transform
         )
 
     def apply_inverse(self, x, y, rotation, scale):
-        return self.apply_inverse_transform(
+        return apply_inverse_transform(
                 (x, y, rotation, scale),
                 self.transform
         )
 
-    def get_pos(self):
-        return self.get_transform()[:2]
 
-    @staticmethod
-    def apply_transform(original_transform, transformation):
-        x, y, rotation, scale = original_transform
-        t_x, t_y, t_rotation, t_scale = transformation
+def apply_transform(original_transform, transformation):
+    x, y, rotation, scale = original_transform
+    t_x, t_y, t_rotation, t_scale = transformation
 
-        rot = atan2(y, x) + radians(t_rotation)
-        dist = sqrt(x * x + y * y) * t_scale
+    rot = atan2(y, x) + radians(t_rotation)
+    dist = sqrt(x * x + y * y) * t_scale
 
-        x = t_x + sin(rot) * dist
-        y = t_y + cos(rot) * dist
-        rotation += t_rotation
-        scale *= t_scale
+    x = t_x + sin(rot) * dist
+    y = t_y + cos(rot) * dist
+    rotation = (rotation + t_rotation) % 360
+    scale *= t_scale
 
-        return x, y, rotation, scale
+    return x, y, rotation, scale
 
-    @staticmethod
-    def apply_inverse_transform(original_transform, transformation):
-        x, y, rotation, scale = original_transform
-        t_x, t_y, t_rotation, t_scale = transformation
 
-        x -= t_x
-        y -= t_y
+def apply_inverse_transform(original_transform, transformation):
+    x, y, rotation, scale = original_transform
+    t_x, t_y, t_rotation, t_scale = transformation
 
-        rot = atan2(y, x) + radians(t_rotation)
-        dist = sqrt(x * x + y * y) / t_scale
+    x -= t_x
+    y -= t_y
 
-        x = sin(rot) * dist
-        y = cos(rot) * dist
-        rotation -= t_rotation
-        scale /= t_scale
+    rot = atan2(y, x) + radians(t_rotation)
+    dist = sqrt(x * x + y * y) / t_scale
 
-        return x, y, rotation, scale
+    x = sin(rot) * dist
+    y = cos(rot) * dist
+    rotation = (rotation - t_rotation) % 360
+    scale /= t_scale
+
+    return x, y, rotation, scale

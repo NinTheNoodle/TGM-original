@@ -2,6 +2,7 @@ from tgm.common import GameObject, sys_event, EventGroup
 from tgm.drivers import get_engine
 from tgm.engine.rendering import RenderContext
 from tgm.engine.transform import Transform
+from tgm.engine.colliders import BoxCollider
 
 engine = get_engine()
 
@@ -41,11 +42,12 @@ class Cursor(GameObject):
         self.transform = Transform(self)
         self.mouse_x = 0
         self.mouse_y = 0
+        BoxCollider(self, 1, 1)
 
     @sys_event
     def draw(self):
         self.transform.transform = self.transform.get_inverse_transform(
-            (self.mouse_x, self.mouse_y, 0, 1),
+            (self.mouse_x, self.mouse_y, 0, 0.4),
             GameObject[RenderContext]
         )
 

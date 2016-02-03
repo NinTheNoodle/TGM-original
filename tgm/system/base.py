@@ -1,5 +1,4 @@
 import operator
-import weakref
 from functools import partial
 
 no_default = object()

@@ -1,10 +1,12 @@
-from .base import EventGroup
+from tgm.system import EventGroup
 
-event = EventGroup(
+sys_event = EventGroup(
     "update",
     "draw",
     "render",
     "update",
     "ancestor_update",
-    "mouse_move"
+    "mouse_move",
+    "get_collisions",
+    "transform_changed"
 )

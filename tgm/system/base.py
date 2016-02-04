@@ -393,7 +393,7 @@ class GameObject(object, metaclass=MetaGameObject):
             parent.children.add(self)
 
         if update:
-            from tgm.common import sys_event
+            from tgm.system import sys_event
             self.tags.select(
                     GameObject[sys_event.ancestor_update]
             ).ancestor_update()

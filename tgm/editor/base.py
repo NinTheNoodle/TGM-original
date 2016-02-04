@@ -1,4 +1,4 @@
-from tgm.common import GameObject
+from tgm.system import GameObject
 
 
 class Editor(GameObject):

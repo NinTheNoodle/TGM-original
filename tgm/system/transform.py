@@ -1,6 +1,6 @@
-from tgm.common import GameObject, common_ancestor
+from tgm.system import GameObject, common_ancestor
 from math import sin, cos, atan2, sqrt, radians
-from tgm.engine.events import event
+from tgm.system import sys_event
 
 
 class Transform(GameObject):
@@ -60,7 +60,7 @@ class Transform(GameObject):
 
     def send_update(self):
         self.parent.tags.select(
-                GameObject[event.transform_changed]
+                GameObject[sys_event.transform_changed]
         ).transform_changed()
 
     def relative_transform(self, other):

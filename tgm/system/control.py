@@ -1,4 +1,4 @@
-from tgm.common import GameObject, sys_event
+from tgm.system import GameObject, sys_event
 from tgm.drivers import get_engine
 
 engine = get_engine()

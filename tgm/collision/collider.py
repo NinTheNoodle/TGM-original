@@ -1,4 +1,4 @@
-from tgm.system import GameObject
+from tgm.system import Entity
 from tgm.system import sys_event
 from tgm.system import Transform
 from collections import defaultdict
@@ -7,13 +7,11 @@ from collections import defaultdict
 collider_updates = set()
 
 
-class Collider(GameObject):
+class Collider(Entity):
     def create(self):
         self.bbox = [0, 0, 0, 0]
         self.points = []
         self.registered = False
-
-        self.transform = Transform(self)
         self.transform_changed()
 
     @property
@@ -39,7 +37,7 @@ class Collider(GameObject):
         self.update_world_mapping()
 
     def update_world_mapping(self):
-        world = self.tags.get_first(CollisionWorld < GameObject)
+        world = self.tags.get_first(CollisionWorld < Entity)
         if self.registered:
             world.unregister_collider(self, *self.bbox)
         self.registered = True
@@ -49,10 +47,10 @@ class Collider(GameObject):
         raise NotImplemented("No collision test provided")
 
     @sys_event
-    def get_collisions(self):
+    def get_collisions(self, query=Entity):
         update_colliders()
-        world = self.tags.get_first(CollisionWorld < GameObject)
-        possible = world.get_possible_collisions(1)
+        world = self.tags.get_first(CollisionWorld < Entity)
+        possible = world.get_possible_collisions(1, query)
         collisions = []
 
         for collider in possible:
@@ -113,7 +111,7 @@ class CompositeCollider(Collider):
     pass
 
 
-class CollisionWorld(GameObject):
+class CollisionWorld(Entity):
     def create(self):
         self.world = defaultdict(lambda: set())
         self.resolution = 256
@@ -133,8 +131,8 @@ class CollisionWorld(GameObject):
                 range(0, int(y2 - y1), self.resolution)):
             self.world[(x + x1, y + y1)].add(collider)
 
-    def get_possible_collisions(self, bbox):
-        return self.parent.tags.select(Collider)
+    def get_possible_collisions(self, bbox, query):
+        return self.parent.tags.select(Collider < query)
 
 
 def update_colliders():

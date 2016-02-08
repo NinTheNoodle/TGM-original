@@ -25,6 +25,26 @@ def mouse_move_event(window, func):
         func(x, y)
 
 
+def mouse_press_event(window, func):
+    @window.event
+    def on_mouse_press(x, y, button, modifiers):
+        func({
+            pyglet.window.mouse.LEFT: "L",
+            pyglet.window.mouse.MIDDLE: "M",
+            pyglet.window.mouse.RIGHT: "R"
+        }[button])
+
+
+def mouse_release_event(window, func):
+    @window.event
+    def on_mouse_release(x, y, button, modifiers):
+        func({
+            pyglet.window.mouse.LEFT: "L",
+            pyglet.window.mouse.MIDDLE: "M",
+            pyglet.window.mouse.RIGHT: "R"
+        }[button])
+
+
 def render_loop(window, func):
     @window.event
     def on_draw():
@@ -48,7 +68,7 @@ def get_sprite(image):
 def draw_sprite(sprite, x, y, rotation, scale):
     sprite._x = round(x)
     sprite._y = round(y)
-    sprite._rotation = rotation
+    sprite._rotation = -rotation
     sprite._scale = scale
     sprite._update_position()
     sprite.draw()

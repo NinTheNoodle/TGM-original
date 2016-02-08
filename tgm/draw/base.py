@@ -1,11 +1,11 @@
-from tgm.system import GameObject, sys_event
+from tgm.system import Entity, sys_event
 
 
-class RenderContext(GameObject):
+class RenderContext(Entity):
     @sys_event
     def render(self):
         self.parent.tags.select(
-            GameObject[sys_event.render],
-            stop=GameObject[RenderContext] - GameObject[self],
+            Entity[sys_event.render],
+            stop=Entity[RenderContext] - Entity[self],
             abort=self
         ).render()

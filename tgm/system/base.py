@@ -97,7 +97,7 @@ def run_query(candidate, query):
 
         return {candidate}
 
-    if isinstance(query, GameObject):
+    if isinstance(query, Entity):
         return set()
 
     if isinstance(candidate, query):
@@ -162,7 +162,7 @@ def has_tags(candidate, query):
 
         return True
 
-    if isinstance(query, GameObject):
+    if isinstance(query, Entity):
         return False
 
     return isinstance(candidate, query)
@@ -213,6 +213,10 @@ class Selection(object):
 
     def __iter__(self):
         yield from self._results
+
+    def __bool__(self):
+        print(self._results)
+        return bool(self._results)
 
     def __getattr__(self, item):
         return AttributeSelection([getattr(result, item)
@@ -274,7 +278,7 @@ class BaseTag(object):
         return TagGroup(self, other, "^")
 
     def __neg__(self):
-        return TagGroup(GameObject, self, "-")
+        return TagGroup(Entity, self, "-")
 
     def __gt__(self, other):
         return TagGroup(self, other, ">")
@@ -328,6 +332,7 @@ class MetaGameObject(type, BaseTag):
         attributes = {}
         test_attributes = []
         children = []
+        tests = []
 
         for arg in args:
             if isinstance(arg, slice):
@@ -348,7 +353,7 @@ class MetaGameObject(type, BaseTag):
         return Tag(cls, attributes, test_attributes, children)
 
 
-class GameObject(object, metaclass=MetaGameObject):
+class Entity(object, metaclass=MetaGameObject):
     def __init__(self, parent, *args, **kwargs):
         self.children = set()
         self.tags = TagStore(self)
@@ -379,6 +384,37 @@ class GameObject(object, metaclass=MetaGameObject):
                 feature.destroy(self)
 
     @property
+    def transform(self):
+        from .transform import Transform
+        if not hasattr(self, "_tgm_transform"):
+            self._tgm_transform = Transform(self)
+        return self._tgm_transform
+
+    @property
+    def x(self):
+        return self.transform.x
+
+    @x.setter
+    def x(self, value):
+        self.transform.x = value
+
+    @property
+    def y(self):
+        return self.transform.y
+
+    @y.setter
+    def y(self, value):
+        self.transform.y = value
+
+    @property
+    def rotation(self):
+        return self.transform.rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self.transform.rotation = value
+
+    @property
     def parent(self):
         return self._tgm_parent
 
@@ -395,11 +431,11 @@ class GameObject(object, metaclass=MetaGameObject):
         if update:
             from tgm.system import sys_event
             self.tags.select(
-                    GameObject[sys_event.ancestor_update]
+                    Entity[sys_event.ancestor_update]
             ).ancestor_update()
 
 
-class EventTag(GameObject):
+class EventTag(Entity):
     def create(self, name, group):
         self.name = name
         self.group = group

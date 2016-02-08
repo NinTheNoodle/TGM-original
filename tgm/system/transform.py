@@ -1,9 +1,9 @@
-from tgm.system import GameObject, common_ancestor
+from tgm.system import Entity, common_ancestor
 from math import sin, cos, atan2, sqrt, radians
 from tgm.system import sys_event
 
 
-class Transform(GameObject):
+class Transform(Entity):
     def create(self, x=0, y=0, rotation=0, scale=1):
         self._x, self._y, self._rotation, self._scale = (
             x, y, rotation, scale
@@ -60,7 +60,7 @@ class Transform(GameObject):
 
     def send_update(self):
         self.parent.tags.select(
-                GameObject[sys_event.transform_changed]
+                Entity[sys_event.transform_changed]
         ).transform_changed()
 
     def relative_transform(self, other):
@@ -73,7 +73,7 @@ class Transform(GameObject):
     def get_parent_transform(self, stop=None):
         try:
             return self.parent.parent.tags.get_first(
-                    Transform < GameObject, stop
+                Transform < Entity, stop
             )
         except (AttributeError, IndexError):
             return None
@@ -126,8 +126,8 @@ def apply_transform(original_transform, transformation):
     rot = atan2(y, x) + radians(t_rotation)
     dist = sqrt(x * x + y * y) * t_scale
 
-    x = t_x + sin(rot) * dist
-    y = t_y + cos(rot) * dist
+    x = t_x + cos(rot) * dist
+    y = t_y + sin(rot) * dist
     rotation = (rotation + t_rotation) % 360
     scale *= t_scale
 

@@ -1,11 +1,18 @@
-from tgm.system import GameObject
+from tgm.system import Entity
+from tgm.ui import TabList
+import tgm
 
 
-class Editor(GameObject):
+class Editor(Entity):
     def create(self):
-        pass
+        tgm.collision.CollisionWorld(self)
+        self.taskbar = TaskBar(self)
 
 
-class TaskBar(GameObject):
+class TaskBar(Entity):
     def create(self):
-        pass
+        self.tablist = TabList(self)
+        self.tablist.add_tab()
+        self.tablist.add_tab()
+        self.tablist.add_tab()
+        print(self.tablist.transform.transform)

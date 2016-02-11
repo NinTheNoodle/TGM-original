@@ -34,6 +34,10 @@ class TabList(Entity):
         button.x = len(self.tabs) * 70
         self.tabs[name] = callback
 
+    @sys_event
+    def update(self):
+        self.rotation += 1
+
     # @sys_event
     # def update(self):
     #     buttons = self.children.copy()#self.tags.select(Button, enabled_only=False)

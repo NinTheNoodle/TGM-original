@@ -133,16 +133,21 @@ def apply_transform(original_transform, transformation):
     x, y, rotation, x_scale, y_scale = original_transform
     t_x, t_y, t_rotation, t_x_scale, t_y_scale = transformation
 
+    x_scale *= t_x_scale
+    y_scale *= t_y_scale
+    x *= t_x_scale
+    y *= t_y_scale
+
     rot = atan2(y, x) + radians(t_rotation)
     dist = sqrt(x * x + y * y)
 
     scale_rot = atan2(y_scale, x_scale) + radians(t_rotation)
     scale_dist = sqrt(x_scale * x_scale + y_scale * y_scale)
 
-    x = t_x + cos(rot) * dist * t_x_scale
-    y = t_y + sin(rot) * dist * t_y_scale
-    x_scale = cos(scale_rot) * scale_dist * t_x_scale
-    y_scale = sin(scale_rot) * scale_dist * t_y_scale
+    x = t_x + cos(rot) * dist
+    y = t_y + sin(rot) * dist
+    x_scale = cos(scale_rot) * scale_dist
+    y_scale = sin(scale_rot) * scale_dist
     rotation = (rotation + t_rotation) % 360
 
     return x, y, rotation, x_scale, y_scale
@@ -155,6 +160,11 @@ def apply_inverse_transform(original_transform, transformation):
     x -= t_x
     y -= t_y
 
+    x_scale /= t_x_scale
+    y_scale /= t_y_scale
+    x /= t_x_scale
+    y /= t_y_scale
+
     rot = atan2(y, x) + radians(t_rotation)
     dist = sqrt(x * x + y * y)
 
@@ -163,8 +173,8 @@ def apply_inverse_transform(original_transform, transformation):
 
     x = (cos(rot) * dist) / t_x_scale
     y = (sin(rot) * dist) / t_y_scale
-    x_scale = (cos(scale_rot) * scale_dist) / t_x_scale
-    y_scale = (sin(scale_rot) * scale_dist) / t_y_scale
+    x_scale = cos(scale_rot) * scale_dist
+    y_scale = sin(scale_rot) * scale_dist
     rotation = (rotation - t_rotation) % 360
 
     return x, y, rotation, x_scale, y_scale

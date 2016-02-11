@@ -28,4 +28,4 @@ class TaskBar(Entity):
 
     @sys_event
     def update(self):
-        self.rotation += 1
+        self.rotation -= 1

@@ -1,4 +1,5 @@
-from functools import partial
+from collections import OrderedDict
+from random import randint
 
 from tgm.system import Entity, sys_event
 from tgm.draw import Sprite
@@ -7,7 +8,7 @@ from tgm.input import Cursor
 
 
 class Button(Entity):
-    def create(self, callback=lambda x: None):
+    def create(self, text, callback=lambda x: None):
         self.callback = callback
         self.sprite = Sprite(self, r"C:\Users\Docopoper\Desktop\Python Projects"
                                    r"\In Progress\ContributorTest\python.png")
@@ -15,24 +16,34 @@ class Button(Entity):
 
     @sys_event
     def update(self):
-        if set(*self.tags.select(
-                Entity[sys_event.get_collisions]
-        ).get_collisions(Cursor["clicking": True])):
+        if self.collisions(Cursor[lambda x: "L" in x.pressed]):
             self.callback(self)
 
 
 class TabList(Entity):
     def create(self):
-        self.tabs = []
-        self.x = 35
-        self.y = 600 - 35
+        self.tabs = OrderedDict()
 
-    def change_tab(self, number):
-        print("change tab ", number)
+    def change_tab(self, tab):
+        if isinstance(tab, int):
+            tab = self.tabs.values[tab]
+        self.tabs[tab]()
 
-    def add_tab(self):
-        button = Button(self, lambda x: self.change_tab(self.tabs.index(x)))
+    def add_tab(self, name, callback):
+        button = Button(self, name, lambda x: self.change_tab(name))
         button.x = len(self.tabs) * 70
-        button.transform.scale = 0.5
-        print(button.transform.get_transform(), button.transform.parent_transform.transform)
-        self.tabs.append(button)
+        self.tabs[name] = callback
+
+    @sys_event
+    def update(self):
+        buttons = self.children.copy()#self.tags.select(Button, enabled_only=False)
+        for button in buttons:
+            if randint(0, 60) == 0:
+                #button.destroy()
+                button.disabled = not button.disabled
+
+
+class Pane(Entity):
+    def create(self):
+        self.sprite = Sprite(self, r"C:\Users\Docopoper\Desktop\Python Projects"
+                                   r"\In Progress\ContributorTest\python.png")

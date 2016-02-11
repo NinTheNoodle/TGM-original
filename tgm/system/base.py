@@ -4,6 +4,19 @@ from functools import partial
 no_default = object()
 
 
+def is_tag(obj):
+    try:
+        if issubclass(obj, BaseTag):
+            return True
+    except TypeError:
+        pass
+
+    if isinstance(obj, BaseTag):
+        return True
+
+    return False
+
+
 def get_all(candidate, query, stop=None, abort=None):
     if abort is not None and has_tags(candidate, abort):
         return set()
@@ -21,7 +34,10 @@ def get_all(candidate, query, stop=None, abort=None):
     return get_all(candidate.parent, query, stop, abort)
 
 
-def select_all(candidate, query, stop=None, abort=None):
+def select_all(candidate, query, stop=None, abort=None, enabled_only=True):
+    if enabled_only and candidate.disabled:
+        return set()
+
     if abort is not None and has_tags(candidate, abort):
         return set()
 
@@ -95,6 +111,10 @@ def run_query(candidate, query):
                        for child in candidate.children):
                 return set()
 
+        for test in query._tgm_tests:
+            if not test(candidate):
+                return set()
+
         return {candidate}
 
     if isinstance(query, Entity):
@@ -158,6 +178,10 @@ def has_tags(candidate, query):
         for subquery in query._tgm_children:
             if not any(has_tags(child, subquery)
                        for child in candidate.children):
+                return False
+
+        for test in query._tgm_tests:
+            if not test(candidate):
                 return False
 
         return True
@@ -257,8 +281,9 @@ class TagStore(object):
         except StopIteration:
             raise IndexError("No results found in get_first")
 
-    def select(self, query, stop=None, abort=None):
-        return Selection(select_all(self.owner, query, stop, abort))
+    def select(self, query, stop=None, abort=None, enabled_only=True):
+        return Selection(select_all(
+            self.owner, query, stop, abort, enabled_only))
 
     def satisfies_query(self, query):
         return has_tags(self.owner, query)
@@ -288,27 +313,33 @@ class BaseTag(object):
 
 
 class Tag(BaseTag):
-    def __init__(self, cls, attributes, test_attributes, children):
+    def __init__(self, cls, attributes, test_attributes, children, tests):
         self._tgm_attributes = attributes.copy()
         self._tgm_test_attributes = test_attributes.copy()
         self._tgm_children = children
         self._tgm_class = cls
+        self._tgm_tests = tests
 
     def __repr__(self):
-        return "Tag:{}({}{}{}{}{})".format(
-                self._tgm_class.__name__,
-                ", ".join(repr(child) for child in self._tgm_children),
-                ", "
-                if self._tgm_children and self._tgm_test_attributes else "",
-                ", ".join(repr(item) for item in self._tgm_test_attributes),
-                ", "
-                if self._tgm_test_attributes and self._tgm_attributes else "",
-                ", ".join(
-                        "{}={!r}".format(key, value)
-                        for key, value in self._tgm_attributes.items()
-                        if key is not "__class__"
-                )
+        data = ""
+
+        data += ", ".join(repr(child) for child in self._tgm_children)
+
+        if data and self._tgm_test_attributes:
+            data += ","
+
+        data += ", ".join(repr(item) for item in self._tgm_test_attributes)
+
+        if data and self._tgm_attributes:
+            data += ","
+
+        data += ", ".join(
+            "{}={!r}".format(key, value)
+            for key, value in self._tgm_attributes.items()
+            if key is not "__class__"
         )
+
+        return "Tag:{}({})".format(self._tgm_class.__name__, data)
 
 
 class TagGroup(BaseTag):
@@ -347,10 +378,12 @@ class MetaGameObject(type, BaseTag):
                 attributes[arg.start] = arg.stop
             elif isinstance(arg, str):
                 test_attributes.append(arg)
-            else:
+            elif is_tag(arg) or isinstance(arg, Entity):
                 children.append(arg)
+            else:
+                tests.append(arg)
 
-        return Tag(cls, attributes, test_attributes, children)
+        return Tag(cls, attributes, test_attributes, children, tests)
 
 
 class Entity(object, metaclass=MetaGameObject):
@@ -359,6 +392,7 @@ class Entity(object, metaclass=MetaGameObject):
         self.tags = TagStore(self)
         self.features = []
         self.parent = parent
+        self.disabled = False
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -382,6 +416,9 @@ class Entity(object, metaclass=MetaGameObject):
         for feature in self.features:
             if hasattr(feature, "destroy"):
                 feature.destroy(self)
+        for child in self.children.copy():
+            child.destroy()
+        self.parent.children.remove(self)
 
     @property
     def transform(self):
@@ -414,6 +451,16 @@ class Entity(object, metaclass=MetaGameObject):
     def rotation(self, value):
         self.transform.rotation = value
 
+    def collisions(self, query=None):
+        from tgm.system import sys_event
+
+        if query is None:
+            query = Entity
+
+        return set(*self.tags.select(
+                Entity[sys_event.get_collisions]
+        ).get_collisions(query))
+
     @property
     def parent(self):
         return self._tgm_parent
@@ -439,4 +486,3 @@ class EventTag(Entity):
     def create(self, name, group):
         self.name = name
         self.group = group
-

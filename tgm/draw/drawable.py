@@ -4,33 +4,64 @@ from .base import RenderContext
 
 engine = get_engine()
 
-###########
-import pyglet
-
 
 class Sprite(Entity):
     def create(self, path):
         self.visible = True
         self.image = engine.get_image(path)
         self.sprite = engine.get_sprite(self.image)
-        #self.transform = Transform(parent=self)
-        #VertexList(self)
+        self.transform.scale = 64
+        VertexList(
+            self,
+            ((-0.5, -0.5), (1, 0.5, 0.5)),
+            ((0.5, -0.5), (1, 0.5, 0.5)),
+            ((-0.5, 0.5), (1, 0.5, 0.5)),
 
-    @sys_event
-    def render(self):
-        x, y, rot, scale = self.transform.get_transform(
-                Entity[RenderContext])
-        engine.draw_sprite(self.sprite, x, y, rot, scale)
+            ((-0.5, 0.5), (1, 0.5, 0.5)),
+            ((0.5, 0.5), (1, 1, 0.5)),
+            ((0.5, -0.5), (1, 0.5, 0.5))
+        )
 
 
 class VertexList(Entity):
-    def create(self, *points):
+    def create(self, *data):
+        self.updated = False
+        self.points, self.colours = list(zip(*data))
 
-        self.vertex_list = pyglet.graphics.vertex_list(2,
-            ('v2i', (10, 15, 30, 35)),
-            ('c3B', (0, 0, 255, 0, 255, 0))
-        )
+        self.batch = self.tags.get_first(RenderLayer < Entity).batch
+
+        self.vertex_list = engine.add_vertex_list(
+            self.batch, self.get_points(), self.colours)
+
+    @sys_event
+    def transform_changed(self):
+        self.updated = True
+
+    def get_points(self):
+        rtn = []
+
+        for point in self.points:
+            x, y, rot, scale = self.transform.get_transform(
+                transform=point + (0, 1)
+            )
+            rtn.append((x, y))
+
+        return rtn
+
+    @sys_event
+    def draw(self):
+        if self.updated:
+            engine.modify_vertex_list(self.vertex_list, self.get_points())
+            self.updated = False
+
+        engine.vertex_list_tick(self.batch, self.vertex_list)
+
+
+class RenderLayer(Entity):
+    def create(self):
+        self.batch = engine.new_batch()
 
     @sys_event
     def render(self):
-        self.vertex_list.draw(pyglet.gl.GL_POINTS)
+        engine.draw_batch(self.batch)
+

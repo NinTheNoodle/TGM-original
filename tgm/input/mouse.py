@@ -40,6 +40,9 @@ class Cursor(Entity):
     def create(self):
         self.mouse_x = 0
         self.mouse_y = 0
+        self.down = set()
+        self.pressed = set()
+        self.released = set()
         BoxCollider(self, 1, 1)
 
     @sys_event
@@ -50,16 +53,12 @@ class Cursor(Entity):
         )
 
     @sys_event
-    def mouse_move(self, x, y):
-        self.mouse_x = x
-        self.mouse_y = y
-
-    @sys_event
-    def mouse_press(self, button):
-        if button == "L":
-            self.clicking = True
-
-    @sys_event
-    def mouse_release(self, button):
-        if button == "L":
-            self.clicking = False
+    def update_init(self):
+        mouse_state = engine.get_mouse_state(
+            self.tags.get_first(RenderContext < Entity).window
+        )
+        self.mouse_x, self.mouse_y = mouse_state["pos"]
+        prev_down = self.down.copy()
+        self.down = mouse_state["buttons"]
+        self.pressed = self.down - prev_down
+        self.released = prev_down - self.down

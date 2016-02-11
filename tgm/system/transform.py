@@ -144,8 +144,8 @@ def apply_inverse_transform(original_transform, transformation):
     rot = atan2(y, x) + radians(t_rotation)
     dist = sqrt(x * x + y * y) / t_scale
 
-    x = sin(rot) * dist
-    y = cos(rot) * dist
+    x = cos(rot) * dist
+    y = sin(rot) * dist
     rotation = (rotation - t_rotation) % 360
     scale /= t_scale
 

@@ -77,10 +77,10 @@ def run_query(candidate, query):
             if has_tags(candidate, obj2) and any(
                     has_tags(child, obj1) for child in candidate.children):
                 return set.union(
-                        *(
-                            run_query(child, obj1)
-                            for child in candidate.children
-                        )
+                    *(
+                        run_query(child, obj1)
+                        for child in candidate.children
+                    )
                 )
             return set()
 
@@ -450,6 +450,22 @@ class Entity(object, metaclass=MetaGameObject):
     @rotation.setter
     def rotation(self, value):
         self.transform.rotation = value
+
+    @property
+    def x_scale(self):
+        return self.transform.x_scale
+
+    @x_scale.setter
+    def x_scale(self, value):
+        self.transform.x_scale = value
+
+    @property
+    def y_scale(self):
+        return self.transform.y_scale
+
+    @y_scale.setter
+    def y_scale(self, value):
+        self.transform.y_scale = value
 
     def collisions(self, query=None):
         from tgm.system import sys_event

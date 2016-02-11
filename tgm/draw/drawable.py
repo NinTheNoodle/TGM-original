@@ -10,7 +10,8 @@ class Sprite(Entity):
         self.visible = True
         self.image = engine.get_image(path)
         self.sprite = engine.get_sprite(self.image)
-        self.transform.scale = 64
+        self.x_scale = 64
+        self.y_scale = 64
         VertexList(
             self,
             ((-0.5, -0.5), (1, 0.5, 0.5)),
@@ -41,8 +42,8 @@ class VertexList(Entity):
         rtn = []
 
         for point in self.points:
-            x, y, rot, scale = self.transform.get_transform(
-                transform=point + (0, 1)
+            x, y, rot, x_scale, y_scale = self.transform.get_transform(
+                transform=point + (0, 1, 1)
             )
             rtn.append((x, y))
 

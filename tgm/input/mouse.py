@@ -48,7 +48,7 @@ class Cursor(Entity):
     @sys_event
     def draw(self):
         self.transform.transform = self.transform.get_inverse_transform(
-            (self.mouse_x, self.mouse_y, 0, 0.1),
+            (self.mouse_x, self.mouse_y, 0, 0.1, 0.1),
             Entity[RenderContext]
         )
 

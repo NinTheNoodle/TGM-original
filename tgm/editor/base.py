@@ -20,6 +20,8 @@ class Editor(Entity):
 class TaskBar(Entity):
     def create(self):
         self.tablist = TabList(self)
+        self.y_scale = 2
+        self.x_scale = 0.5
 
     def add_task(self, pane, name):
         self.tablist.add_tab(name, lambda: print(name, pane))

@@ -1,4 +1,4 @@
-from tgm.system import Entity, sys_event, Transform
+from tgm.system import Entity, sys_event, Invisible
 from tgm.drivers import get_engine
 from .base import RenderContext
 
@@ -8,31 +8,41 @@ engine = get_engine()
 class Sprite(Entity):
     def create(self, path):
         self.visible = True
-        self.image = engine.get_image(path)
-        self.sprite = engine.get_sprite(self.image)
+        # self.image = engine.get_image(path)
+        # self.sprite = engine.get_sprite(self.image)
         self.x_scale = 64
         self.y_scale = 64
         VertexList(
             self,
-            ((-0.5, -0.5), (1, 0.5, 0.5)),
-            ((0.5, -0.5), (1, 0.5, 0.5)),
-            ((-0.5, 0.5), (1, 0.5, 0.5)),
-
-            ((-0.5, 0.5), (1, 0.5, 0.5)),
-            ((0.5, 0.5), (1, 1, 0.5)),
-            ((0.5, -0.5), (1, 0.5, 0.5))
+            points=(
+                (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
+                (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)
+            ),
+            colours=(
+                (1, 0.5, 0.5), (1, 0.5, 0.5), (1, 0.5, 0.5),
+                (1, 0.5, 0.5), (1, 1, 0.5), (1, 0.5, 0.5),
+            )
         )
 
 
 class VertexList(Entity):
-    def create(self, *data):
+    def create(self, points, colours=None, uvs=None, texture=None):
         self.updated = False
-        self.points, self.colours = list(zip(*data))
+        self.points = points
+        self.colours = colours
+        self.texture = texture
+        self.uvs = uvs
 
-        self.batch = self.tags.get_first(RenderLayer < Entity).batch
+        self.target = self.tags.get_first(RenderContext < Entity).texture
 
-        self.vertex_list = engine.add_vertex_list(
-            self.batch, self.get_points(), self.colours)
+        self.vertex_list = engine.VertexList(
+            self.target,
+            self.texture,
+            None,
+            self.get_points(),
+            self.colours,
+            self.uvs
+        )
 
     @sys_event
     def transform_changed(self):
@@ -52,14 +62,15 @@ class VertexList(Entity):
     @sys_event
     def draw(self):
         if self.updated:
-            engine.modify_vertex_list(self.vertex_list, self.get_points())
+            self.vertex_list.points = self.get_points()
             self.updated = False
 
-        engine.vertex_list_tick(self.batch, self.vertex_list)
+        self.vertex_list.update()
 
 
 class RenderLayer(Entity):
-    def create(self):
+    def create(self, below=False):
+        self.below = below
         self.batch = engine.new_batch()
 
     @sys_event

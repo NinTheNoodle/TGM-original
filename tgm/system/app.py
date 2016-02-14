@@ -1,12 +1,10 @@
-from tgm.drivers import get_engine, get_audio
+from tgm.drivers import get_engine
 
 
-audio = get_audio()
-renderer = get_engine()
+engine = get_engine()
 
 
 def run(setup):
-    audio.init_audio()
-    renderer.init_renderer()
+    app = engine.App()
     setup()
-    renderer.run()
+    app.run()

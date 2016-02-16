@@ -12,9 +12,7 @@ class Window(RenderContext):
     }
 
     def create(self, width, height):
-        super(Window, self).create(width, height)
-
-        self.window = engine.Window(self.texture)
+        self.window = engine.Window(width, height)
 
         def update(dt):
             self.window.update()

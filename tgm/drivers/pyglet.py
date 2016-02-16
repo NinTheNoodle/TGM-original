@@ -1,5 +1,53 @@
 import pyglet
-from pyglet.gl import *
+from pyglet import gl
+import os.path
+
+
+class TextureGroup(pyglet.graphics.Group):
+    def set_state(self):
+        gl.glEnable(gl.GL_TEXTURE_2D)
+
+    def unset_state(self):
+        gl.glDisable(gl.GL_TEXTURE_2D)
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__
+
+    def __hash__(self):
+        return hash(self.__class__)
+
+
+class RenderGroup(pyglet.graphics.Group):
+    def __init__(self, depth, texture=None):
+        self.depth = depth
+        if texture is not None:
+            self.texture = texture.texture
+            super(RenderGroup, self).__init__(parent=TextureGroup())
+        else:
+            self.texture = None
+            super(RenderGroup, self).__init__()
+
+    def set_state(self):
+        if self.texture is not None:
+            gl.glBindTexture(self.texture.target, self.texture.id)
+
+    def __lt__(self, other):
+        if self.__class__ == other.__class__:
+            if self.texture == other.texture:
+                return self.depth < other.depth
+        return super(RenderGroup, self).__lt__(other)
+
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+
+        return self.depth == other.depth and self.texture == other.texture
+
+    def __hash__(self):
+        data = (self.__class__, self.depth)
+        if self.texture is not None:
+            data = data + (self.texture.id, self.texture.target)
+        return hash(data)
 
 
 class App(object):
@@ -10,16 +58,99 @@ class App(object):
         pyglet.app.run()
 
 
-class Window(object):
-    def __init__(self, texture):
-        self.texture = texture
-        self.window = pyglet.window.Window(texture.width, texture.height)
+class Texture(object):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.vertex_lists = []
+
+        self.batch = pyglet.graphics.Batch()
+        self.texture = pyglet.image.Texture.create(
+            width, height, internalformat=gl.GL_RGBA
+        )
+
+        buffers = pyglet.image.get_buffer_manager()
+        self.col_buffer = buffers.get_color_buffer()
+
+    def update_visibility(self, frame):
+        for vertex_list in self.vertex_lists:
+            vertex_list.update_visibility(frame)
+
+    def redraw(self):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+
+        gl.gluOrtho2D(
+            0,
+            self.width,
+            0,
+            self.height
+        )
+
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+
+        gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT,
+                                self.col_buffer.gl_buffer)
+
+        gl.glFramebufferTexture2DEXT(
+            gl.GL_DRAW_FRAMEBUFFER_EXT,
+            gl.GL_COLOR_ATTACHMENT0_EXT,
+            self.texture.target, self.texture.id, 0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+
+        self.batch.draw()
+
+        gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT, 0)
+
+    def add(self, vertex_list):
+        self.vertex_lists.append(vertex_list)
+
+        data = []
+
+        if vertex_list.points is not None:
+            data.append("v2f")
+
+        if vertex_list.uvs is not None:
+            data.append(("t2f", flatten(vertex_list.uvs)))
+
+        if vertex_list.colours is not None:
+            data.append(("c3f", flatten(vertex_list.colours)))
+
+        return self.batch.add(
+            len(vertex_list.points),
+            vertex_list.mode,
+            RenderGroup(vertex_list.depth, vertex_list.texture),
+            *data
+        )
+
+    def get_direct_vertex_list(self, x, y):
+        return pyglet.graphics.vertex_list(6, *self.get_draw_data(x, y))
+
+    def get_vertex_list(self, target, x, y):
+        return VertexList(target, self.texture, None,
+                          quad(x, y, self.width, self.height),
+                          None, texture_uvs(self.texture))
+
+    def get_draw_data(self, x, y):
+        return (
+            ("t2f", flatten(texture_uvs(self.texture))),
+            ("v2f", flatten(quad(x, y, self.width, self.height)))
+        )
+
+
+class Window(Texture):
+    def __init__(self, width, height):
+        super(Window, self).__init__(width, height)
+        self.window = pyglet.window.Window(width, height)
         self.mouse_buttons = set()
         self.mouse_pos = (0, 0)
         self.frame = 0
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.vertex_list = self.get_direct_vertex_list(0, 0)
 
         def mouse_button(button):
             return {
@@ -51,8 +182,24 @@ class Window(object):
 
         @self.window.event
         def on_draw():
-            self.window.clear()
-            self.texture.texture.blit(0, 0)
+            gl.glEnable(gl.GL_BLEND)
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+            gl.glMatrixMode(gl.GL_PROJECTION)
+            gl.glLoadIdentity()
+            gl.gluOrtho2D(
+                0,
+                self.width,
+                0,
+                self.height
+            )
+
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+
+            gl.glLoadIdentity()
+            gl.glEnable(gl.GL_TEXTURE_2D)
+            gl.glBindTexture(self.texture.target, self.texture.id)
+            self.vertex_list.draw(gl.GL_TRIANGLES)
+            gl.glDisable(gl.GL_TEXTURE_2D)
 
     def get_mouse_buttons(self):
         return self.mouse_buttons.copy()
@@ -68,80 +215,33 @@ class Window(object):
 
     def update(self):
         self.frame += 1
-        self.texture.update_visibility(self.frame)
-        self.texture.redraw()
+        self.update_visibility(self.frame)
+        self.redraw()
 
 
-class Texture(object):
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.vertex_lists = []
+class Image(Texture):
+    loaded_images = {}
 
-        self.batch = pyglet.graphics.Batch()
-        self.texture = pyglet.image.Texture.create(
-            width, height, internalformat=GL_RGBA)
+    def __init__(self, path):
+        path = os.path.normpath(os.path.normcase(path))
 
-        buffers = pyglet.image.get_buffer_manager()
-        self.col_buffer = buffers.get_color_buffer()
+        if path not in self.loaded_images:
+            self.loaded_images[path] = pyglet.image.load(path)
 
-    def update_visibility(self, frame):
-        for vertex_list in self.vertex_lists:
-            vertex_list.update_visibility(frame)
+        self.path = path
+        self.image = self.loaded_images[path]
 
-    def redraw(self):
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glMatrixMode(GL_PROJECTION)
+        width, height = self.image.width, self.image.height
 
-        glLoadIdentity()
-        gluOrtho2D(
-            0,
-            self.width,
-            0,
-            self.height)
+        super(Image, self).__init__(width, height)
 
-        glMatrixMode(GL_MODELVIEW)
-
-        glLoadIdentity()
-
-        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, self.col_buffer.gl_buffer)
-
-        glFramebufferTexture2DEXT(
-            GL_DRAW_FRAMEBUFFER_EXT,
-            GL_COLOR_ATTACHMENT0_EXT,
-            self.texture.target, self.texture.id, 0)
-        glClear(GL_COLOR_BUFFER_BIT)
-
-        self.batch.draw()
-
-        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0)
-
-    def add(self, vertex_list):
-        self.vertex_lists.append(vertex_list)
-
-        data = []
-
-        if vertex_list.points is not None:
-            data.append(("v2f", (0, 0) * len(vertex_list.points)))
-
-        if vertex_list.uvs is not None:
-            data.append(("t2f", flatten(vertex_list.uvs)))
-
-        if vertex_list.colours is not None:
-            data.append(("c3f", flatten(vertex_list.colours)))
-
-        return self.batch.add(
-            len(vertex_list.points),
-            vertex_list.mode,
-            None,
-            *data
+        self.quad = VertexList.new_quad(
+            self, self.image.get_texture(), None, 0, 0,
+            next_power(width), next_power(height)
         )
 
-
-class Image(object):
-    def __init__(self, target, path):
-        self.path = path
+        self.update_visibility(-1)
+        self.redraw()
 
 
 class VertexList(object):
@@ -153,13 +253,23 @@ class VertexList(object):
         self._colours = colours
         self._uvs = uvs
         self._points = points
-        self._visible = True
+        self._visible = False
 
-        self.mode = GL_TRIANGLES
-        self.last_updated = 0
-        self.frame = 0
+        self.mode = gl.GL_TRIANGLES
+        self.last_updated = -1
+        self.frame = -1
 
         self.vertex_list = target.add(self)
+
+    @classmethod
+    def new_quad(cls, target, texture, depth, x, y, width, height):
+        if texture is not None:
+            uvs = texture_uvs(texture)
+        else:
+            uvs = None
+        return cls(target, texture, depth,
+                   quad(x, y, width, height),
+                   None, uvs)
 
     @property
     def points(self):
@@ -224,3 +334,20 @@ def flatten(iterator):
         for element in iterator
         for subelement in element
     )
+
+
+def quad(x, y, width, height):
+    return (
+        (x, y), (x + width, y), (x, y + height),
+        (x, y + height), (x + width, y), (x + width, y + height)
+    )
+
+
+def next_power(x):
+    return 1 << (x - 1).bit_length()
+
+
+def texture_uvs(texture):
+    tex_w, tex_h = texture.tex_coords[6:8]
+    print(tex_w, tex_h, texture.width, texture.height)
+    return quad(0, 0, tex_w, tex_h)

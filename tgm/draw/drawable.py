@@ -7,9 +7,10 @@ engine = get_engine()
 
 class Sprite(Entity):
     def create(self, path):
+        path = r"C:\Users\Docopoper\Desktop\Python Projects\In Progress\TGM\M64.png"
+        #path = r"C:\Users\Docopoper\Desktop\Misc\Vulpix.png"
         self.visible = True
-        # self.image = engine.get_image(path)
-        # self.sprite = engine.get_sprite(self.image)
+        self.image = engine.Image(path)
         self.x_scale = 64
         self.y_scale = 64
         VertexList(
@@ -18,10 +19,11 @@ class Sprite(Entity):
                 (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
                 (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)
             ),
-            colours=(
-                (1, 0.5, 0.5), (1, 0.5, 0.5), (1, 0.5, 0.5),
-                (1, 0.5, 0.5), (1, 1, 0.5), (1, 0.5, 0.5),
-            )
+            uvs=(
+                (0, 0), (1, 0), (0, 1),
+                (0, 1), (1, 1), (1, 0)
+            ),
+            texture=self.image
         )
 
 
@@ -33,7 +35,7 @@ class VertexList(Entity):
         self.texture = texture
         self.uvs = uvs
 
-        self.target = self.tags.get_first(RenderContext < Entity).texture
+        self.target = self.tags.get_first(RenderContext < Entity).window
 
         self.vertex_list = engine.VertexList(
             self.target,

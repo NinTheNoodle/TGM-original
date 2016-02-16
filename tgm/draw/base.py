@@ -5,9 +5,6 @@ engine = get_engine()
 
 
 class RenderContext(Entity):
-    def create(self, width, height):
-        self.texture = engine.Texture(width, height)
-
     @sys_event
     def render(self):
         self.parent.tags.select(

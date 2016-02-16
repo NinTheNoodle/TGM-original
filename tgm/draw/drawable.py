@@ -7,8 +7,6 @@ engine = get_engine()
 
 class Sprite(Entity):
     def create(self, path):
-        path = r"C:\Users\Docopoper\Desktop\Python Projects\In Progress\TGM\M64.png"
-        #path = r"C:\Users\Docopoper\Desktop\Misc\Vulpix.png"
         self.visible = True
         self.image = engine.Image(path)
         self.x_scale = 64

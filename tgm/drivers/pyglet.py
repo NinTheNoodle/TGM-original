@@ -3,6 +3,14 @@ from pyglet import gl
 import os.path
 
 
+class App(object):
+    def __init__(self):
+        pass
+
+    def run(self):
+        pyglet.app.run()
+
+
 class TextureGroup(pyglet.graphics.Group):
     def set_state(self):
         gl.glEnable(gl.GL_TEXTURE_2D)
@@ -48,14 +56,6 @@ class RenderGroup(pyglet.graphics.Group):
         if self.texture is not None:
             data = data + (self.texture.id, self.texture.target)
         return hash(data)
-
-
-class App(object):
-    def __init__(self):
-        pass
-
-    def run(self):
-        pyglet.app.run()
 
 
 class Texture(object):
@@ -127,16 +127,9 @@ class Texture(object):
             *data
         )
 
-    def get_direct_vertex_list(self, x, y):
-        return pyglet.graphics.vertex_list(6, *self.get_draw_data(x, y))
-
-    def get_vertex_list(self, target, x, y):
-        return VertexList(target, self.texture, None,
-                          quad(x, y, self.width, self.height),
-                          None, texture_uvs(self.texture))
-
-    def get_draw_data(self, x, y):
-        return (
+    def get_vertex_list(self, x, y):
+        return pyglet.graphics.vertex_list(
+            6,
             ("t2f", flatten(texture_uvs(self.texture))),
             ("v2f", flatten(quad(x, y, self.width, self.height)))
         )
@@ -150,7 +143,7 @@ class Window(Texture):
         self.mouse_pos = (0, 0)
         self.frame = 0
 
-        self.vertex_list = self.get_direct_vertex_list(0, 0)
+        self.vertex_list = self.get_vertex_list(0, 0)
 
         def mouse_button(button):
             return {
@@ -219,7 +212,7 @@ class Window(Texture):
         self.redraw()
 
 
-class Image(Texture):
+class Image(object):
     loaded_images = {}
 
     def __init__(self, path):
@@ -231,17 +224,7 @@ class Image(Texture):
         self.path = path
         self.image = self.loaded_images[path]
 
-        width, height = self.image.width, self.image.height
-
-        super(Image, self).__init__(width, height)
-
-        self.quad = VertexList.new_quad(
-            self, self.image.get_texture(), None, 0, 0,
-            next_power(width), next_power(height)
-        )
-
-        self.update_visibility(-1)
-        self.redraw()
+        self.texture = self.image.get_texture()
 
 
 class VertexList(object):
@@ -249,6 +232,17 @@ class VertexList(object):
         self.target = target
         self.texture = texture
         self.depth = depth
+
+        if texture is not None:
+            width = texture.texture.width
+            height = texture.texture.height
+            x_scale = width / next_power(width)
+            y_scale = height / next_power(height)
+
+            uvs = tuple(
+                (x * x_scale, y * y_scale)
+                for x, y in uvs
+            )
 
         self._colours = colours
         self._uvs = uvs
@@ -349,5 +343,4 @@ def next_power(x):
 
 def texture_uvs(texture):
     tex_w, tex_h = texture.tex_coords[6:8]
-    print(tex_w, tex_h, texture.width, texture.height)
     return quad(0, 0, tex_w, tex_h)

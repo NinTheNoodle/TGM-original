@@ -41,8 +41,10 @@ class RenderGroup(pyglet.graphics.Group):
 
     def __lt__(self, other):
         if self.__class__ == other.__class__:
-            if self.texture == other.texture:
-                return self.depth < other.depth
+            try:
+                return self.depth > other.depth
+            except TypeError:
+                pass
         return super(RenderGroup, self).__lt__(other)
 
     def __eq__(self, other):
@@ -225,6 +227,8 @@ class Image(object):
         self.image = self.loaded_images[path]
 
         self.texture = self.image.get_texture()
+        self.width = self.image.width
+        self.height = self.image.height
 
 
 class VertexList(object):
@@ -247,7 +251,7 @@ class VertexList(object):
         self._colours = colours
         self._uvs = uvs
         self._points = points
-        self._visible = False
+        self._visible = True
 
         self.mode = gl.GL_TRIANGLES
         self.last_updated = -1

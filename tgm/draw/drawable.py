@@ -9,13 +9,13 @@ class Sprite(Entity):
     def create(self, path):
         self.visible = True
         self.image = engine.Image(path)
-        self.x_scale = 64
-        self.y_scale = 64
+        w = self.image.width / 2
+        h = self.image.height / 2
         VertexList(
             self,
             points=(
-                (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5),
-                (-0.5, 0.5), (0.5, 0.5), (0.5, -0.5)
+                (-w, -h), (w, -h), (-w, h),
+                (-w, h), (w, h), (w, -h)
             ),
             uvs=(
                 (0, 0), (1, 0), (0, 1),
@@ -23,6 +23,14 @@ class Sprite(Entity):
             ),
             texture=self.image
         )
+
+    @property
+    def width(self):
+        return self.image.width
+
+    @property
+    def height(self):
+        return self.image.height
 
 
 class VertexList(Entity):
@@ -35,10 +43,11 @@ class VertexList(Entity):
 
         self.target = self.tags.get_first(RenderContext < Entity).window
 
+        print(self.computed_depth)
         self.vertex_list = engine.VertexList(
             self.target,
             self.texture,
-            None,
+            self.computed_depth,
             self.get_points(),
             self.colours,
             self.uvs

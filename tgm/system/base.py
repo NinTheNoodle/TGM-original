@@ -238,8 +238,10 @@ class Selection(object):
     def __iter__(self):
         yield from self._results
 
+    def __getitem__(self, item):
+        return list(self._results)[item]
+
     def __bool__(self):
-        print(self._results)
         return bool(self._results)
 
     def __getattr__(self, item):
@@ -393,6 +395,7 @@ class Entity(object, metaclass=MetaGameObject):
         self.features = []
         self.parent = parent
         self.disabled = False
+        self.depth = 0
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -419,6 +422,12 @@ class Entity(object, metaclass=MetaGameObject):
         for child in self.children.copy():
             child.destroy()
         self.parent.children.remove(self)
+
+    @property
+    def computed_depth(self):
+        if self.parent is None:
+            return (self.depth,)
+        return (self.depth,) + self.parent.computed_depth
 
     @property
     def transform(self):

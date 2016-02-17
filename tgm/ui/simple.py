@@ -8,11 +8,17 @@ from tgm.input import Cursor
 
 
 class Button(Entity):
-    def create(self, text, callback=lambda x: None):
+    def create(self, image, text, callback=lambda x: None):
         self.callback = callback
-        self.sprite = Sprite(self, r"C:\Users\Docopoper\Desktop\Python Projects"
-                                   r"\In Progress\ContributorTest\python.png")
-        BoxCollider(self, 32, 32)
+
+        width = 64
+        height = 32
+        self.depth = -1
+
+        self.sprite = Sprite(self, image)
+        self.sprite.x_scale = width / self.sprite.width
+        self.sprite.y_scale = height / self.sprite.height
+        BoxCollider(self, width / 2, height / 2)
 
     @sys_event
     def update(self):
@@ -30,13 +36,15 @@ class TabList(Entity):
         self.tabs[tab]()
 
     def add_tab(self, name, callback):
-        button = Button(self, name, lambda x: self.change_tab(name))
+        icon = r"C:\Users\Docopoper\Desktop\Python Projects" \
+               r"\In Progress\TGM\tgm\editor\assets\button.png"
+        button = Button(self, icon, name, lambda x: self.change_tab(name))
         button.x = len(self.tabs) * 70
         self.tabs[name] = callback
 
-    @sys_event
-    def update(self):
-        self.rotation += 1
+    # @sys_event
+    # def update(self):
+    #     self.rotation += 1
 
     # @sys_event
     # def update(self):

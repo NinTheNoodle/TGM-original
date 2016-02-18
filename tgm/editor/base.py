@@ -1,4 +1,4 @@
-from tgm.system import Entity, sys_event
+from tgm.system import Entity, tgm_event
 from tgm.ui import TabList
 import tgm
 

@@ -1,6 +1,6 @@
 from tgm.system import Entity, common_ancestor
 from math import sin, cos, atan2, sqrt, radians
-from tgm.system import sys_event
+from tgm.system import tgm_event
 
 
 class Transform(Entity):
@@ -70,15 +70,8 @@ class Transform(Entity):
 
     def send_update(self):
         self.parent.tags.select(
-            Entity[sys_event.transform_changed]
-        ).transform_changed()
-
-    # def relative_transform(self, other):
-    #     ancestor = common_ancestor(self, other)
-    #     x1, y1, r1, xs1, ys1 = self.get_transform(ancestor)
-    #     x2, y2, r2, xs2, ys2 = other.get_transform(ancestor)
-    #
-    #     return x2 - x1, y2 - y1, r2 - r1, xs2 / xs1, ys2 / ys1
+            Entity[tgm_event.tgm_transform_changed]
+        ).tgm_transform_changed()
 
     def get_parent_transform(self, stop=None):
         try:

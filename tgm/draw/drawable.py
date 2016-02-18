@@ -1,4 +1,4 @@
-from tgm.system import Entity, sys_event, Invisible
+from tgm.system import Entity, tgm_event, Invisible
 from tgm.drivers import get_engine
 from .base import RenderContext
 
@@ -43,7 +43,6 @@ class VertexList(Entity):
 
         self.target = self.tags.get_first(RenderContext < Entity).window
 
-        print(self.computed_depth)
         self.vertex_list = engine.VertexList(
             self.target,
             self.texture,
@@ -53,8 +52,8 @@ class VertexList(Entity):
             self.uvs
         )
 
-    @sys_event
-    def transform_changed(self):
+    @tgm_event
+    def tgm_transform_changed(self):
         self.updated = True
 
     def get_points(self):
@@ -68,21 +67,10 @@ class VertexList(Entity):
 
         return rtn
 
-    @sys_event
-    def draw(self):
+    @tgm_event
+    def tgm_draw(self):
         if self.updated:
             self.vertex_list.points = self.get_points()
             self.updated = False
 
         self.vertex_list.update()
-
-
-class RenderLayer(Entity):
-    def create(self, below=False):
-        self.below = below
-        self.batch = engine.new_batch()
-
-    @sys_event
-    def render(self):
-        engine.draw_batch(self.batch)
-

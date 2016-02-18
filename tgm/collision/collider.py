@@ -1,5 +1,5 @@
 from tgm.system import Entity
-from tgm.system import sys_event
+from tgm.system import tgm_event
 from tgm.system import Transform
 from collections import defaultdict
 
@@ -12,7 +12,7 @@ class Collider(Entity):
         self.bbox = [0, 0, 0, 0]
         self.points = []
         self.registered = False
-        self.transform_changed()
+        self.tgm_transform_changed()
 
     @property
     def transformed_bbox(self):
@@ -46,8 +46,8 @@ class Collider(Entity):
     def is_colliding(self, other):
         raise NotImplemented("No collision test provided")
 
-    @sys_event
-    def get_collisions(self, query=Entity):
+    @tgm_event
+    def tgm_get_collisions(self, query=Entity):
         update_colliders()
         world = self.tags.get_first(CollisionWorld < Entity)
         possible = world.get_possible_collisions(1, query)
@@ -59,8 +59,8 @@ class Collider(Entity):
 
         return collisions
 
-    @sys_event
-    def transform_changed(self):
+    @tgm_event
+    def tgm_transform_changed(self):
         collider_updates.add(self)
 
 

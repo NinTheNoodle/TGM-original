@@ -1,4 +1,4 @@
-from tgm.system import Entity, sys_event, Transform
+from tgm.system import Entity, tgm_event, Transform
 from tgm.drivers import get_engine
 from tgm.draw import RenderContext, Window
 from tgm.collision import BoxCollider
@@ -15,15 +15,15 @@ class Cursor(Entity):
         self.released = set()
         BoxCollider(self, 1, 1)
 
-    @sys_event
-    def draw(self):
+    @tgm_event
+    def tgm_draw(self):
         self.transform.transform = self.transform.get_inverse_transform(
             (self.mouse_x, self.mouse_y, 0, 0.2, 0.2),
             Entity[RenderContext]
         )
 
-    @sys_event
-    def update_init(self):
+    @tgm_event
+    def tgm_update_init(self):
         window = self.tags.get_first(Window < Entity).window
 
         self.mouse_x, self.mouse_y = window.get_mouse_pos()

@@ -1,6 +1,6 @@
 from tgm.system import EventGroup
 
-sys_event = EventGroup(
+tgm_event = EventGroup("tgm", [
     "update",
     "draw",
     "render",
@@ -12,4 +12,4 @@ sys_event = EventGroup(
     "mouse_release",
     "get_collisions",
     "transform_changed"
-)
+])

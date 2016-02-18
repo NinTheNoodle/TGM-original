@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from random import randint
 
-from tgm.system import Entity, sys_event
+from tgm.system import Entity, tgm_event
 from tgm.draw import Sprite
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
@@ -20,8 +20,8 @@ class Button(Entity):
         self.sprite.y_scale = height / self.sprite.height
         BoxCollider(self, width / 2, height / 2)
 
-    @sys_event
-    def update(self):
+    @tgm_event
+    def tgm_update(self):
         if self.collisions(Cursor[lambda x: "L" in x.pressed]):
             self.callback(self)
 

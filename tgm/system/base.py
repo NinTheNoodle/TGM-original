@@ -197,21 +197,28 @@ class Feature(object):
 
 
 class EventGroup(object):
-    def __init__(self, *events):
+    def __init__(self, namespace, events):
         self._events = frozenset(events)
+        self._namespace = namespace + "_"
+
+    def _validate_event(self, name):
+        if not name.startswith(self._namespace):
+            raise AttributeError(
+                "event '{}' should start with '{}'".format(
+                    name,
+                    self._namespace
+                )
+            )
+
+        if name[len(self._namespace):] not in self._events:
+            raise AttributeError("event '{}' is not defined".format(name))
 
     def __call__(self, func):
-        func_name = func.__name__
-
-        if func_name not in self._events:
-            raise AttributeError("event '{}' is not defined".format(func_name))
-
+        self._validate_event(func.__name__)
         return EventMethod(func, self)
 
     def __getattr__(self, event):
-        if event not in self._events:
-            raise AttributeError("event '{}' is not defined".format(event))
-
+        self._validate_event(event)
         return EventTag["name":event, "group":self]
 
 
@@ -477,14 +484,14 @@ class Entity(object, metaclass=MetaGameObject):
         self.transform.y_scale = value
 
     def collisions(self, query=None):
-        from tgm.system import sys_event
+        from tgm.system import tgm_event
 
         if query is None:
             query = Entity
 
         return set(*self.tags.select(
-                Entity[sys_event.get_collisions]
-        ).get_collisions(query))
+            Entity[tgm_event.tgm_get_collisions]
+        ).tgm_get_collisions(query))
 
     @property
     def parent(self):
@@ -501,9 +508,9 @@ class Entity(object, metaclass=MetaGameObject):
             parent.children.add(self)
 
         if update:
-            from tgm.system import sys_event
+            from tgm.system import tgm_event
             self.tags.select(
-                    Entity[sys_event.ancestor_update]
+                    Entity[tgm_event.tgm_ancestor_update]
             ).ancestor_update()
 
 

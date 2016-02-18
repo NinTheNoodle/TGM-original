@@ -1,4 +1,4 @@
-from tgm.system import Entity, sys_event, Inactive, Invisible
+from tgm.system import Entity, tgm_event, Inactive, Invisible
 from tgm.drivers import get_engine
 from . import RenderContext
 
@@ -18,18 +18,18 @@ class Window(RenderContext):
             self.window.update()
 
             self.parent.tags.select(
-                Entity[sys_event.update_init],
+                Entity[tgm_event.tgm_update_init],
                 abort=Entity[Inactive]
-            ).update_init()
+            ).tgm_update_init()
 
             self.parent.tags.select(
-                Entity[sys_event.update],
+                Entity[tgm_event.tgm_update],
                 abort=Entity[Inactive]
-            ).update()
+            ).tgm_update()
 
             self.parent.tags.select(
-                Entity[sys_event.draw],
+                Entity[tgm_event.tgm_draw],
                 abort=Entity[Invisible]
-            ).draw()
+            ).tgm_draw()
 
         self.window.schedule(update, 1 / 60)

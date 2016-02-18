@@ -197,8 +197,10 @@ class Feature(object):
 
 
 class EventGroup(object):
-    def __init__(self, namespace, events):
-        self._events = frozenset(events)
+    def __init__(self, namespace, **event_groups):
+        self._events = frozenset(event
+                                 for group in event_groups.values()
+                                 for event in group)
         self._namespace = namespace + "_"
 
     def _validate_event(self, name):

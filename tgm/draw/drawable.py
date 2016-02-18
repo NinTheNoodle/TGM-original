@@ -35,7 +35,12 @@ class Sprite(Entity):
 
 class VertexList(Entity):
     def create(self, points, colours=None, uvs=None, texture=None):
-        self.updated = False
+        self.update_map = {
+            "points": self.get_points,
+            "depth": lambda: self.computed_depth
+        }
+        self.updates = set()
+
         self.points = points
         self.colours = colours
         self.texture = texture
@@ -54,7 +59,7 @@ class VertexList(Entity):
 
     @tgm_event
     def tgm_transform_changed(self):
-        self.updated = True
+        self.updates.add("points")
 
     def get_points(self):
         rtn = []
@@ -68,9 +73,13 @@ class VertexList(Entity):
         return rtn
 
     @tgm_event
+    def tgm_depth_update(self):
+        self.updates.add("depth")
+
+    @tgm_event
     def tgm_draw(self):
-        if self.updated:
-            self.vertex_list.points = self.get_points()
-            self.updated = False
+        self.vertex_list.update(**{
+            name: self.update_map[name]() for name in self.updates
+        })
 
         self.vertex_list.update()

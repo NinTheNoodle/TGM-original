@@ -404,7 +404,7 @@ class Entity(object, metaclass=MetaGameObject):
         self.features = []
         self.parent = parent
         self.disabled = False
-        self.depth = 0
+        self._tgm_depth = 0
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -437,6 +437,18 @@ class Entity(object, metaclass=MetaGameObject):
         if self.parent is None:
             return (self.depth,)
         return (self.depth,) + self.parent.computed_depth
+
+    @property
+    def depth(self):
+        return self._tgm_depth
+
+    @depth.setter
+    def depth(self, value):
+        from tgm.system import tgm_event
+        self._tgm_depth = value
+        self.tags.select(
+            Entity[tgm_event.tgm_depth_update]
+        ).tgm_depth_update()
 
     @property
     def transform(self):

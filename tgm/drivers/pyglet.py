@@ -129,6 +129,14 @@ class Texture(object):
             *data
         )
 
+    def migrate(self, vertex_list):
+        self.batch.migrate(
+            vertex_list.vertex_list,
+            gl.GL_TRIANGLES,
+            RenderGroup(vertex_list.depth, vertex_list.texture),
+            self.batch
+        )
+
     def get_vertex_list(self, x, y):
         return pyglet.graphics.vertex_list(
             6,
@@ -322,7 +330,14 @@ class VertexList(object):
                 self.visible = False
         self.frame = frame
 
-    def update(self):
+    def update(self, points=None, depth=None):
+        if points is not None:
+            self.points = points
+
+        if depth is not None:
+            self.depth = depth
+            self.target.migrate(self)
+
         self.last_updated = self.frame
 
 

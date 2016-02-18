@@ -1,7 +1,7 @@
 import operator
-from functools import partial
+import collections
 
-no_default = object()
+auto_call = {}
 
 
 def is_tag(obj):
@@ -103,7 +103,10 @@ def run_query(candidate, query):
                 return set()
 
         for key, value in query._tgm_attributes.items():
-            if getattr(candidate, key, no_default) != value:
+            try:
+                if getattr(candidate, key) != value:
+                    return set()
+            except AttributeError:
                 return set()
 
         for subquery in query._tgm_children:
@@ -172,7 +175,10 @@ def has_tags(candidate, query):
                 return False
 
         for key, value in query._tgm_attributes.items():
-            if getattr(candidate, key, no_default) != value:
+            try:
+                if getattr(candidate, key) != value:
+                    return False
+            except AttributeError:
                 return False
 
         for subquery in query._tgm_children:
@@ -190,10 +196,6 @@ def has_tags(candidate, query):
         return False
 
     return isinstance(candidate, query)
-
-
-class Feature(object):
-    pass
 
 
 class EventGroup(object):
@@ -217,27 +219,16 @@ class EventGroup(object):
 
     def __call__(self, func):
         self._validate_event(func.__name__)
-        return EventMethod(func, self)
+
+        def add_tag(entity, name):
+            EventTag(entity, name, self)
+
+        auto_call[func] = add_tag
+        return func
 
     def __getattr__(self, event):
         self._validate_event(event)
         return EventTag["name":event, "group":self]
-
-
-class EventMethod(Feature):
-    """
-    Substitute for a normal Python method
-    automatically tags its own existence
-    """
-    def __init__(self, function, group):
-        self.function = function
-        self.group = group
-
-    def init(self, instance):
-        EventTag(instance, self.function.__name__, self.group)
-
-    def __get__(self, instance, owner):
-        return partial(self.function, instance)
 
 
 class Selection(object):
@@ -401,7 +392,6 @@ class Entity(object, metaclass=MetaGameObject):
     def __init__(self, parent, *args, **kwargs):
         self.children = set()
         self.tags = TagStore(self)
-        self.features = []
         self.parent = parent
         self.disabled = False
         self._tgm_depth = 0
@@ -411,23 +401,17 @@ class Entity(object, metaclass=MetaGameObject):
             class_dict.update(cls.__dict__)
 
         for name, value in class_dict.items():
-            if isinstance(value, Feature):
-                self.features.append(value)
+            if isinstance(value, collections.Hashable):
+                if value in auto_call:
+                    auto_call[value](self, name)
 
         self.init_args = args
         self.init_kwargs = kwargs
-
-        for feature in self.features:
-            if hasattr(feature, "init"):
-                feature.init(self)
 
         if hasattr(self, "create"):
             self.create(*args, **kwargs)
 
     def destroy(self):
-        for feature in self.features:
-            if hasattr(feature, "destroy"):
-                feature.destroy(self)
         for child in self.children.copy():
             child.destroy()
         self.parent.children.remove(self)

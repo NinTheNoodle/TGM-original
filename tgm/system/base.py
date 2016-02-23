@@ -120,7 +120,7 @@ def run_query(candidate, query):
 
         return {candidate}
 
-    if isinstance(query, Entity):
+    if isinstance(query, GameObject):
         return set()
 
     if isinstance(candidate, query):
@@ -192,7 +192,7 @@ def has_tags(candidate, query):
 
         return True
 
-    if isinstance(query, Entity):
+    if isinstance(query, GameObject):
         return False
 
     return isinstance(candidate, query)
@@ -200,9 +200,15 @@ def has_tags(candidate, query):
 
 class EventGroup(object):
     def __init__(self, namespace, **event_groups):
-        self._events = frozenset(event
-                                 for group in event_groups.values()
-                                 for event in group)
+        events = set()
+        for group in event_groups.values():
+            for event in group:
+                if event in events:
+                    raise ValueError("event '{}' listed more than once".format(
+                        event
+                    ))
+                events.add(event)
+        self._events = frozenset(events)
         self._namespace = namespace + "_"
 
     def _validate_event(self, name):
@@ -305,7 +311,7 @@ class BaseTag(object):
         return TagGroup(self, other, "^")
 
     def __neg__(self):
-        return TagGroup(Entity, self, "-")
+        return TagGroup(GameObject, self, "-")
 
     def __gt__(self, other):
         return TagGroup(self, other, ">")
@@ -380,7 +386,7 @@ class MetaGameObject(type, BaseTag):
                 attributes[arg.start] = arg.stop
             elif isinstance(arg, str):
                 test_attributes.append(arg)
-            elif is_tag(arg) or isinstance(arg, Entity):
+            elif is_tag(arg) or isinstance(arg, GameObject):
                 children.append(arg)
             else:
                 tests.append(arg)
@@ -388,8 +394,10 @@ class MetaGameObject(type, BaseTag):
         return Tag(cls, attributes, test_attributes, children, tests)
 
 
-class Entity(object, metaclass=MetaGameObject):
-    def __init__(self, parent, *args, **kwargs):
+class GameObject(object, metaclass=MetaGameObject):
+    def __init__(self, parent, *args, _x=None, _y=None, _rotation=None,
+                 _x_scale=None, _y_scale=None, _depth=None,
+                 **kwargs):
         self.children = set()
         self.tags = TagStore(self)
         self.parent = parent
@@ -407,6 +415,24 @@ class Entity(object, metaclass=MetaGameObject):
 
         self.init_args = args
         self.init_kwargs = kwargs
+
+        if _x is not None:
+            self.x = _x
+
+        if _y is not None:
+            self.y = _y
+
+        if _rotation is not None:
+            self.rotation = _rotation
+
+        if _x_scale is not None:
+            self.x_scale = _x_scale
+
+        if _y_scale is not None:
+            self.y_scale = _y_scale
+
+        if _depth is not None:
+            self.depth = _depth
 
         if hasattr(self, "create"):
             self.create(*args, **kwargs)
@@ -431,7 +457,7 @@ class Entity(object, metaclass=MetaGameObject):
         from tgm.system import tgm_event
         self._tgm_depth = value
         self.tags.select(
-            Entity[tgm_event.tgm_depth_update]
+            GameObject[tgm_event.tgm_depth_update]
         ).tgm_depth_update()
 
     @property
@@ -485,11 +511,11 @@ class Entity(object, metaclass=MetaGameObject):
         from tgm.system import tgm_event
 
         if query is None:
-            query = Entity
+            query = GameObject
 
-        return set(*self.tags.select(
-            Entity[tgm_event.tgm_get_collisions]
-        ).tgm_get_collisions(query))
+        return set(x for y in self.tags.select(
+            GameObject[tgm_event.tgm_get_collisions]
+        ).tgm_get_collisions(query) for x in y)
 
     @property
     def parent(self):
@@ -508,11 +534,11 @@ class Entity(object, metaclass=MetaGameObject):
         if update:
             from tgm.system import tgm_event
             self.tags.select(
-                    Entity[tgm_event.tgm_ancestor_update]
+                    GameObject[tgm_event.tgm_ancestor_update]
             ).ancestor_update()
 
 
-class EventTag(Entity):
+class EventTag(GameObject):
     def create(self, name, group):
         self.name = name
         self.group = group

@@ -1,12 +1,12 @@
-from tgm.system import Entity, tgm_event
+from tgm.system import GameObject, tgm_event
 from tgm.drivers import get_engine
 
 engine = get_engine()
 
 
-class Inactive(Entity):
+class Inactive(GameObject):
     pass
 
 
-class Invisible(Entity):
+class Invisible(GameObject):
     pass

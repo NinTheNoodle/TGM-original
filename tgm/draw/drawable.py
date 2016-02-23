@@ -1,11 +1,11 @@
-from tgm.system import Entity, tgm_event, Invisible
+from tgm.system import GameObject, tgm_event, Invisible
 from tgm.drivers import get_engine
 from .base import RenderContext
 
 engine = get_engine()
 
 
-class Sprite(Entity):
+class Sprite(GameObject):
     def create(self, path):
         self.visible = True
         self.image = engine.Image(path)
@@ -33,7 +33,7 @@ class Sprite(Entity):
         return self.image.height
 
 
-class VertexList(Entity):
+class VertexList(GameObject):
     def create(self, points, colours=None, uvs=None, texture=None):
         self.update_map = {
             "points": self.get_points,
@@ -46,7 +46,7 @@ class VertexList(Entity):
         self.texture = texture
         self.uvs = uvs
 
-        self.target = self.tags.get_first(RenderContext < Entity).window
+        self.target = self.tags.get_first(RenderContext < GameObject).window
 
         self.vertex_list = engine.VertexList(
             self.target,

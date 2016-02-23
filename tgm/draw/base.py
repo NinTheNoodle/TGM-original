@@ -1,14 +1,14 @@
-from tgm.system import Entity, tgm_event
+from tgm.system import GameObject, tgm_event
 from tgm.drivers import get_engine
 
 engine = get_engine()
 
 
-class RenderContext(Entity):
+class RenderContext(GameObject):
     @tgm_event
     def tgm_render(self):
         self.parent.tags.select(
-            Entity[tgm_event.tgm_render],
-            stop=Entity[RenderContext] - Entity[self],
+            GameObject[tgm_event.tgm_render],
+            stop=GameObject[RenderContext] - GameObject[self],
             abort=self
         ).render()

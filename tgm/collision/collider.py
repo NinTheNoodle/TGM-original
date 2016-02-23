@@ -1,4 +1,4 @@
-from tgm.system import Entity
+from tgm.system import GameObject
 from tgm.system import tgm_event
 from tgm.system import Transform
 from collections import defaultdict
@@ -7,7 +7,7 @@ from collections import defaultdict
 collider_updates = set()
 
 
-class Collider(Entity):
+class Collider(GameObject):
     def create(self):
         self.bbox = [0, 0, 0, 0]
         self.points = []
@@ -37,7 +37,7 @@ class Collider(Entity):
         self.update_world_mapping()
 
     def update_world_mapping(self):
-        world = self.tags.get_first(CollisionWorld < Entity)
+        world = self.tags.get_first(CollisionWorld < GameObject)
         if self.registered:
             world.unregister_collider(self, *self.bbox)
         self.registered = True
@@ -47,9 +47,9 @@ class Collider(Entity):
         raise NotImplemented("No collision test provided")
 
     @tgm_event
-    def tgm_get_collisions(self, query=Entity):
+    def tgm_get_collisions(self, query=GameObject):
         update_colliders()
-        world = self.tags.get_first(CollisionWorld < Entity)
+        world = self.tags.get_first(CollisionWorld < GameObject)
         possible = world.get_possible_collisions(1, query)
         collisions = []
 
@@ -111,7 +111,7 @@ class CompositeCollider(Collider):
     pass
 
 
-class CollisionWorld(Entity):
+class CollisionWorld(GameObject):
     def create(self):
         self.world = defaultdict(lambda: set())
         self.resolution = 256

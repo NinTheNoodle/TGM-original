@@ -1,19 +1,26 @@
 from collections import OrderedDict
-from random import randint
 
-from tgm.system import Entity, tgm_event
+from tgm.system import GameObject, tgm_event
 from tgm.draw import Sprite
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
+from tgm.editor import EditorObject, TextSetting, FileSetting, FunctionSetting
 
 
-class Button(Entity):
+class Button(GameObject):
+    editor = EditorObject(
+        image=TextSetting(""),
+        text=FileSetting(""),
+        callback=FunctionSetting(lambda x: None)
+    )
+
     def create(self, image, text, callback=lambda x: None):
+        self.text = text
         self.callback = callback
 
         width = 64
         height = 32
-        self.depth = -1
+        self.depth = 0
 
         self.sprite = Sprite(self, image)
         self.sprite.x_scale = width / self.sprite.width
@@ -26,7 +33,7 @@ class Button(Entity):
             self.callback(self)
 
 
-class TabList(Entity):
+class TabList(GameObject):
     def create(self):
         self.tabs = OrderedDict()
 
@@ -38,24 +45,12 @@ class TabList(Entity):
     def add_tab(self, name, callback):
         icon = r"C:\Users\Docopoper\Desktop\Python Projects" \
                r"\In Progress\TGM\tgm\editor\assets\button.png"
-        button = Button(self, icon, name, lambda x: self.change_tab(name))
-        button.x = len(self.tabs) * 70
+        Button(self, icon, name, lambda x: self.change_tab(name),
+               _x=len(self.tabs) * 70)
         self.tabs[name] = callback
 
-    # @sys_event
-    # def update(self):
-    #     self.rotation += 1
 
-    # @sys_event
-    # def update(self):
-    #     buttons = self.children.copy()#self.tags.select(Button, enabled_only=False)
-    #     for button in buttons:
-    #         if randint(0, 60) == 0:
-    #             #button.destroy()
-    #             button.disabled = not button.disabled
-
-
-class Pane(Entity):
+class Pane(GameObject):
     def create(self):
         self.sprite = Sprite(self, r"C:\Users\Docopoper\Desktop\Python Projects"
                                    r"\In Progress\ContributorTest\python.png")

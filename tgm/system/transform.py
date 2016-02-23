@@ -1,9 +1,9 @@
-from tgm.system import Entity, common_ancestor
+from tgm.system import GameObject, common_ancestor
 from math import sin, cos, atan2, sqrt, radians
 from tgm.system import tgm_event
 
 
-class Transform(Entity):
+class Transform(GameObject):
     def create(self, x=0, y=0, rotation=0, x_scale=1, y_scale=1):
         self._x, self._y, self._rotation, self._x_scale, self._y_scale = (
             x, y, rotation, x_scale, y_scale
@@ -70,13 +70,13 @@ class Transform(Entity):
 
     def send_update(self):
         self.parent.tags.select(
-            Entity[tgm_event.tgm_transform_changed]
+            GameObject[tgm_event.tgm_transform_changed]
         ).tgm_transform_changed()
 
     def get_parent_transform(self, stop=None):
         try:
             return self.parent.parent.tags.get_first(
-                Transform < Entity, stop
+                Transform < GameObject, stop
             )
         except (AttributeError, IndexError):
             return None

@@ -14,6 +14,7 @@ def load_prefab(target, file):
         for instance_data in instances:
             module_name, class_name = instance_data["class"].rsplit(".", 1)
             arguments = instance_data.get("arguments", {})
+            attributes = instance_data.get("attributes", {})
             children = instance_data.get("children", [])
 
             module = import_module(module_name)
@@ -25,6 +26,9 @@ def load_prefab(target, file):
             )
 
             instance = cls(current_target, **parsed_arguments)
+
+            for name, value in attributes.items():
+                setattr(instance, name, eval(compile(value, file.name, "eval")))
 
             load(instance, children)
 

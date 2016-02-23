@@ -4,21 +4,23 @@
     "arguments": {
       "text": "Test",
       "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-      "callback": "self.parent.button_pressed(self.text)",
-      "_x": 60,
-      "_y": 100,
-      "_rotation": 45,
-      "_y_scale": 4
+      "callback": "self.parent.button_pressed(self.text)"
     },
-    "children": [{
+    "attributes": {
+      "x": "60",
+      "y": "100"
+    }
+  },
+  {
       "class": "tgm.ui.simple.Button",
       "arguments": {
         "text": "Toast",
         "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-        "callback": "self.parent.parent.button_pressed(self.text)",
-        "_x": 120,
-        "_rotation": 45
+        "callback": "self.parent.button_pressed(self.text)"
+      },
+      "attributes": {
+        "x": "160",
+        "y": "120"
       }
-    }]
-  }
+    }
 ]

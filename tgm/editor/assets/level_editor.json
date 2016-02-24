@@ -12,15 +12,15 @@
     }
   },
   {
-      "class": "tgm.ui.simple.Button",
-      "arguments": {
-        "text": "Toast",
-        "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-        "callback": "self.parent.button_pressed(self.text)"
-      },
-      "attributes": {
-        "x": "160",
-        "y": "120"
-      }
+    "class": "tgm.ui.simple.Button",
+    "arguments": {
+      "text": "Test2",
+      "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+      "callback": "self.destroy()"
+    },
+    "attributes": {
+      "x": "160",
+      "y": "120"
     }
+  }
 ]

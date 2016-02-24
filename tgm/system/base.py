@@ -1,7 +1,10 @@
 import operator
 import collections
+from weakref import WeakKeyDictionary, ref, WeakSet
 
-auto_call = {}
+auto_call = WeakKeyDictionary()
+game_objects = WeakSet()
+destroyed_game_objects = WeakSet()
 
 
 def is_tag(obj):
@@ -278,20 +281,20 @@ class AttributeSelection(object):
 
 class TagStore(object):
     def __init__(self, owner):
-        self.owner = owner
+        self.owner = ref(owner)
 
     def get_all(self, query, stop=None, abort=None):
-        return Selection(get_all(self.owner, query, stop, abort))
+        return Selection(get_all(self.owner(), query, stop, abort))
 
     def get_first(self, query, stop=None, abort=None):
         try:
-            return next(iter(get_all(self.owner, query, stop, abort)))
+            return next(iter(get_all(self.owner(), query, stop, abort)))
         except StopIteration:
             raise IndexError("No results found in get_first")
 
     def select(self, query, stop=None, abort=None, enabled_only=True):
         return Selection(select_all(
-            self.owner, query, stop, abort, enabled_only))
+            self.owner(), query, stop, abort, enabled_only))
 
     def satisfies_query(self, query):
         return has_tags(self.owner, query)
@@ -395,14 +398,13 @@ class MetaGameObject(type, BaseTag):
 
 
 class GameObject(object, metaclass=MetaGameObject):
-    def __init__(self, parent, *args, _x=None, _y=None, _rotation=None,
-                 _x_scale=None, _y_scale=None, _depth=None,
-                 **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         self.children = set()
         self.tags = TagStore(self)
         self.parent = parent
         self.disabled = False
         self._tgm_depth = 0
+        game_objects.add(self)
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -416,28 +418,11 @@ class GameObject(object, metaclass=MetaGameObject):
         self.init_args = args
         self.init_kwargs = kwargs
 
-        if _x is not None:
-            self.x = _x
-
-        if _y is not None:
-            self.y = _y
-
-        if _rotation is not None:
-            self.rotation = _rotation
-
-        if _x_scale is not None:
-            self.x_scale = _x_scale
-
-        if _y_scale is not None:
-            self.y_scale = _y_scale
-
-        if _depth is not None:
-            self.depth = _depth
-
         if hasattr(self, "create"):
             self.create(*args, **kwargs)
 
     def destroy(self):
+        destroyed_game_objects.add(self)
         for child in self.children.copy():
             child.destroy()
         self.parent.children.remove(self)

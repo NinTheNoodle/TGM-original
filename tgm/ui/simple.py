@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from tgm.system import GameObject, tgm_event
-from tgm.draw import Sprite
+from tgm.draw import BorderedSprite, Sprite, Text
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
 from tgm.editor import EditorObject, TextSetting, FileSetting, FunctionSetting
@@ -22,9 +22,10 @@ class Button(GameObject):
         height = 32
         self.depth = 0
 
-        self.sprite = Sprite(self, image)
-        self.sprite.x_scale = width / self.sprite.width
-        self.sprite.y_scale = height / self.sprite.height
+        self.sprite = BorderedSprite(self, image, 4)
+        self.sprite.width = width
+        self.sprite.height = height
+        self.label = Text(self, text)
         BoxCollider(self, width / 2, height / 2)
 
     @tgm_event
@@ -45,8 +46,8 @@ class TabList(GameObject):
     def add_tab(self, name, callback):
         icon = r"C:\Users\Docopoper\Desktop\Python Projects" \
                r"\In Progress\TGM\tgm\editor\assets\button.png"
-        Button(self, icon, name, lambda x: self.change_tab(name),
-               _x=len(self.tabs) * 70)
+        button = Button(self, icon, name, lambda x: self.change_tab(name))
+        button.x = len(self.tabs) * 70
         self.tabs[name] = callback
 
 

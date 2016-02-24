@@ -61,24 +61,25 @@ class RenderGroup(pyglet.graphics.Group):
 
 
 class Texture(object):
-    def __init__(self, width, height):
+    def __init__(self, width, height, texture=None):
         self.width = width
         self.height = height
-        self.vertex_lists = []
-
-        self.batch = pyglet.graphics.Batch()
-        self.texture = pyglet.image.Texture.create(
-            width, height, internalformat=gl.GL_RGBA
-        )
+        if texture is None:
+            self.texture = pyglet.image.Texture.create(
+                width, height, internalformat=gl.GL_RGBA
+            )
+        else:
+            self.texture = texture
 
         buffers = pyglet.image.get_buffer_manager()
         self.col_buffer = buffers.get_color_buffer()
+        self.x_scale = 1
+        self.y_scale = 1
 
-    def update_visibility(self, frame):
-        for vertex_list in self.vertex_lists:
-            vertex_list.update_visibility(frame)
+    def clear(self):
+        self.draw(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
 
-    def redraw(self):
+    def draw(self, func):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
@@ -87,9 +88,9 @@ class Texture(object):
 
         gl.gluOrtho2D(
             0,
-            self.width,
+            self.width * self.x_scale,
             0,
-            self.height
+            self.height * self.y_scale
         )
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -102,11 +103,24 @@ class Texture(object):
             gl.GL_DRAW_FRAMEBUFFER_EXT,
             gl.GL_COLOR_ATTACHMENT0_EXT,
             self.texture.target, self.texture.id, 0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-        self.batch.draw()
+        func()
 
         gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT, 0)
+
+
+class Context(Texture):
+    def __init__(self, width, height):
+        super(Context, self).__init__(width, height)
+        self.vertex_lists = []
+        self.batch = pyglet.graphics.Batch()
+
+    def update_visibility(self, frame):
+        for vertex_list in self.vertex_lists:
+            vertex_list.update_visibility(frame)
+
+    def redraw(self):
+        self.draw(self.batch.draw)
 
     def add(self, vertex_list):
         self.vertex_lists.append(vertex_list)
@@ -145,7 +159,7 @@ class Texture(object):
         )
 
 
-class Window(Texture):
+class Window(Context):
     def __init__(self, width, height):
         super(Window, self).__init__(width, height)
         self.window = pyglet.window.Window(width, height)
@@ -222,7 +236,7 @@ class Window(Texture):
         self.redraw()
 
 
-class Image(object):
+class Image(Texture):
     loaded_images = {}
 
     def __init__(self, path):
@@ -234,9 +248,9 @@ class Image(object):
         self.path = path
         self.image = self.loaded_images[path]
 
-        self.texture = self.image.get_texture()
-        self.width = self.image.width
-        self.height = self.image.height
+        super(Image, self).__init__(
+            self.image.width, self.image.height, self.image.get_texture()
+        )
 
 
 class VertexList(object):
@@ -330,15 +344,51 @@ class VertexList(object):
                 self.visible = False
         self.frame = frame
 
-    def update(self, points=None, depth=None):
+    def update(self, points=None, uvs=None, colours=None, depth=None):
         if points is not None:
             self.points = points
+
+        if uvs is not None:
+            self.uvs = uvs
+
+        if colours is not None:
+            self.colours = colours
 
         if depth is not None:
             self.depth = depth
             self.target.migrate(self)
 
         self.last_updated = self.frame
+
+
+class Text(Texture):
+    def __init__(self, text, colour, size):
+        self._text = text
+        self.label = pyglet.text.Label(
+            text, x=0, y=0, anchor_x='left', anchor_y='bottom',
+            font_name='Times New Roman', font_size=size, color=colour
+        )
+        w = int(max(self.label._vertex_lists[0].vertices[::2]))
+        h = int(max(self.label._vertex_lists[0].vertices[1::2]))
+        print(w, h, text)
+        super(Text, self).__init__(w, h)
+        self.x_scale = 1024 / w
+        self.y_scale = 768 / h
+        self.draw(self.label.draw)
+
+    def _update(self):
+        self.clear()
+        self.draw(self.label.draw)
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        self._text = value
+        self.label.text = value
+        self._update()
 
 
 def flatten(iterator):

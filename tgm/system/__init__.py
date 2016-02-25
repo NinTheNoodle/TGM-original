@@ -1,5 +1,5 @@
 from .app import run
-from .base import GameObject, EventGroup, EventTag
+from .base import GameObject, EventGroup, EventTag, Dummy
 from .events import tgm_event
 from .control import Inactive, Invisible
 from .helper import common_ancestor

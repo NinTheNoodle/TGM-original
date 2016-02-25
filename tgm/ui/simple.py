@@ -4,7 +4,9 @@ from tgm.system import GameObject, tgm_event
 from tgm.draw import BorderedSprite, Sprite, Text
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
-from tgm.editor import EditorObject, TextSetting, FileSetting, FunctionSetting
+from tgm.editor import (
+    EditorObject, TextSetting, FileSetting, FunctionSetting, NumberSetting
+)
 
 
 class Button(GameObject):
@@ -52,6 +54,13 @@ class TabList(GameObject):
 
 
 class Pane(GameObject):
-    def create(self):
-        self.sprite = Sprite(self, r"C:\Users\Docopoper\Desktop\Python Projects"
-                                   r"\In Progress\ContributorTest\python.png")
+    editor = EditorObject(
+        image=TextSetting(""),
+        width=NumberSetting(32),
+        height=NumberSetting(32)
+    )
+
+    def create(self, image, width, height):
+        self.sprite = BorderedSprite(self, image, 4)
+        self.sprite.width = width
+        self.sprite.height = height

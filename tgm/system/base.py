@@ -527,3 +527,7 @@ class EventTag(GameObject):
     def create(self, name, group):
         self.name = name
         self.group = group
+
+
+class Dummy(GameObject):
+    pass

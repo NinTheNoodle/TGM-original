@@ -23,7 +23,10 @@ def register(package):
 
     for loader, name, is_package in pkgutil.iter_modules(paths):
         if name.startswith("_"):
-            continue
+            if name == "__init__":
+                continue
+            if not (name.startswith("__") and name.endswith("__")):
+                continue
         module = loader.find_module(name).load_module(name)
         if is_package:
             register(module.__package__)

@@ -1,6 +1,6 @@
 from tgm.system import GameObject, tgm_event, Invisible
 from tgm.drivers import get_engine
-from .base import RenderContext
+from tgm.draw import RenderContext
 
 engine = get_engine()
 

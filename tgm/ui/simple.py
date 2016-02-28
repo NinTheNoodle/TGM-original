@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from tgm.system import GameObject, tgm_event
+from tgm.system import GameObject, tgm_event, Group
 from tgm.draw import BorderedSprite, Sprite, Text
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
@@ -39,6 +39,7 @@ class Button(GameObject):
 class TabList(GameObject):
     def create(self):
         self.tabs = OrderedDict()
+        print(self.dir)
 
     def change_tab(self, tab):
         if isinstance(tab, int):

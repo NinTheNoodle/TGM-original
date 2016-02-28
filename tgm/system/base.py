@@ -1,5 +1,7 @@
 import operator
 import collections
+import os
+import sys
 from weakref import WeakKeyDictionary, ref, WeakSet
 
 auto_call = WeakKeyDictionary()
@@ -425,7 +427,12 @@ class GameObject(object, metaclass=MetaGameObject):
         destroyed_game_objects.add(self)
         for child in self.children.copy():
             child.destroy()
-        self.parent.children.remove(self)
+        if self.parent is not None:
+            self.parent.children.remove(self)
+
+    @property
+    def dir(self):
+        return os.path.dirname(sys.modules[self.__class__.__module__].__file__)
 
     @property
     def computed_depth(self):
@@ -529,5 +536,5 @@ class EventTag(GameObject):
         self.group = group
 
 
-class Dummy(GameObject):
+class Group(GameObject):
     pass

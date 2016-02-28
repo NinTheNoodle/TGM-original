@@ -1,4 +1,4 @@
-from tgm.system import GameObject, tgm_event, Invisible
+from tgm.system import GameObject, tgm_event
 from tgm.drivers import get_engine
 from tgm.draw import RenderContext
 

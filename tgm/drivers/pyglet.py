@@ -76,6 +76,25 @@ class Texture(object):
         self.x_scale = 1
         self.y_scale = 1
 
+    def resize(self, width, height, offset_x=0, offset_y=0):
+        old_texture = self.texture
+        old_width = self.width
+        old_height = self.height
+
+        self.texture = pyglet.image.Texture.create(
+            width, height, internalformat=gl.GL_RGBA
+        )
+        self.width = width
+        self.height = height
+
+        vertex_list = pyglet.graphics.vertex_list(
+            6,
+            ("t2f", flatten(texture_uvs(old_texture))),
+            ("v2f", flatten(quad(offset_x, offset_y, old_width, old_height)))
+        )
+
+        self.draw(lambda: vertex_list.draw(gl.GL_TRIANGLES))
+
     def clear(self):
         self.draw(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
 
@@ -108,6 +127,12 @@ class Texture(object):
 
         gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT, 0)
 
+    def get_vertex_list(self, x, y):
+        return pyglet.graphics.vertex_list(
+            6,
+            ("t2f", flatten(texture_uvs(self.texture))),
+            ("v2f", flatten(quad(x, y, self.width, self.height)))
+        )
 
 class Context(Texture):
     def __init__(self, width, height):
@@ -151,18 +176,11 @@ class Context(Texture):
             self.batch
         )
 
-    def get_vertex_list(self, x, y):
-        return pyglet.graphics.vertex_list(
-            6,
-            ("t2f", flatten(texture_uvs(self.texture))),
-            ("v2f", flatten(quad(x, y, self.width, self.height)))
-        )
-
 
 class Window(Context):
     def __init__(self, width, height):
         super(Window, self).__init__(width, height)
-        self.window = pyglet.window.Window(width, height)
+        self.window = pyglet.window.Window(width, height, resizable=True)
         self.mouse_buttons = set()
         self.mouse_pos = (0, 0)
         self.frame = 0
@@ -198,6 +216,10 @@ class Window(Context):
             self.mouse_pos = x, y
 
         @self.window.event
+        def on_resize(width, height):
+            self.resize(width, height)
+
+        @self.window.event
         def on_draw():
             gl.glEnable(gl.GL_BLEND)
             gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
@@ -205,9 +227,9 @@ class Window(Context):
             gl.glLoadIdentity()
             gl.gluOrtho2D(
                 0,
-                self.width,
+                self.window.width,
                 0,
-                self.height
+                self.window.height
             )
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -217,6 +239,10 @@ class Window(Context):
             gl.glBindTexture(self.texture.target, self.texture.id)
             self.vertex_list.draw(gl.GL_TRIANGLES)
             gl.glDisable(gl.GL_TEXTURE_2D)
+
+    def resize(self, width, height, offset_x=0, offset_y=0):
+        super(Window, self).resize(width, height, offset_x, offset_y)
+        self.vertex_list = self.get_vertex_list(0, 0)
 
     def get_mouse_buttons(self):
         return self.mouse_buttons.copy()

@@ -1,5 +1,8 @@
 from .app import run
-from .base import GameObject, EventGroup, EventTag, Dummy
+from .base import (
+    GameObject, EventGroup, EventTag, Group, game_objects,
+    destroyed_game_objects
+)
 from .events import tgm_event
 from .control import Inactive, Invisible
 from .helper import common_ancestor

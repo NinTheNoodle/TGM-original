@@ -401,12 +401,20 @@ class MetaGameObject(type, BaseTag):
 
 class GameObject(object, metaclass=MetaGameObject):
     def __init__(self, parent, *args, **kwargs):
+        if isinstance(parent, (list, tuple)):
+            parent, *self._tgm_meta = parent
+        else:
+            self._tgm_meta = []
+
+        self.init_args = args
+        self.init_kwargs = kwargs
         self.children = set()
         self.tags = TagStore(self)
-        self.parent = parent
         self.disabled = False
         self._tgm_depth = 0
         game_objects.add(self)
+
+        self.parent = parent
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -417,18 +425,26 @@ class GameObject(object, metaclass=MetaGameObject):
                 if value in auto_call:
                     auto_call[value](self, name)
 
-        self.init_args = args
-        self.init_kwargs = kwargs
-
-        if hasattr(self, "create"):
-            self.create(*args, **kwargs)
+        if hasattr(self, "on_create"):
+            self.on_create(*args, **kwargs)
 
     def destroy(self):
         destroyed_game_objects.add(self)
         for child in self.children.copy():
             child.destroy()
+        self.on_destroy()
         if self.parent is not None:
+            self.on_remove_child(self)
             self.parent.children.remove(self)
+
+    def on_destroy(self):
+        pass
+
+    def on_add_child(self, child):
+        pass
+
+    def on_remove_child(self, child):
+        pass
 
     @property
     def dir(self):
@@ -518,20 +534,23 @@ class GameObject(object, metaclass=MetaGameObject):
         update = hasattr(self, "parent")
 
         if getattr(self, "parent", None) is not None:
+            self.parent.on_remove_child(self)
             self.parent.children.remove(self)
         self._tgm_parent = parent
         if parent is not None:
             parent.children.add(self)
+            self.parent.on_add_child(self, *self._tgm_meta)
 
         if update:
             from tgm.system import tgm_event
             self.tags.select(
-                    GameObject[tgm_event.tgm_ancestor_update]
+                GameObject[tgm_event.tgm_ancestor_update],
+                enabled_only=False
             ).ancestor_update()
 
 
 class EventTag(GameObject):
-    def create(self, name, group):
+    def on_create(self, name, group):
         self.name = name
         self.group = group
 

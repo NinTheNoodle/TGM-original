@@ -11,7 +11,7 @@ class Window(RenderContext):
         "height": 600
     }
 
-    def create(self, width, height):
+    def on_create(self, width, height):
         self.window = engine.Window(width, height)
 
         def update(dt):

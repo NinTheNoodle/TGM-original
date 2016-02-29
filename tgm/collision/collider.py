@@ -8,7 +8,7 @@ collider_updates = set()
 
 
 class Collider(GameObject):
-    def create(self):
+    def on_create(self):
         self.bbox = [0, 0, 0, 0]
         self.points = []
         self.registered = False
@@ -65,8 +65,8 @@ class Collider(GameObject):
 
 
 class BoxCollider(Collider):
-    def create(self, width, height):
-        super(BoxCollider, self).create()
+    def on_create(self, width, height):
+        super(BoxCollider, self).on_create()
         self.set_points(
             (-width / 2, -height / 2),
             (width / 2, -height / 2),
@@ -112,7 +112,7 @@ class CompositeCollider(Collider):
 
 
 class CollisionWorld(GameObject):
-    def create(self):
+    def on_create(self):
         self.world = defaultdict(lambda: set())
         self.resolution = 256
 

@@ -64,6 +64,7 @@ class Texture(object):
     def __init__(self, width, height, texture=None):
         self.width = width
         self.height = height
+        self.fixed_size = None
         if texture is None:
             self.texture = pyglet.image.Texture.create(
                 width, height, internalformat=gl.GL_RGBA
@@ -99,18 +100,19 @@ class Texture(object):
         self.draw(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
 
     def draw(self, func):
+        if self.fixed_size is None:
+            width = self.width * self.x_scale
+            height = self.height * self.y_scale
+        else:
+            width, height = self.fixed_size
+
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        gl.gluOrtho2D(
-            0,
-            self.width * self.x_scale,
-            0,
-            self.height * self.y_scale
-        )
+        gl.gluOrtho2D(0, width, 0, height)
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
@@ -127,12 +129,19 @@ class Texture(object):
 
         gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT, 0)
 
-    def get_vertex_list(self, x, y):
+    def get_vertex_list(self, x, y, width=None, height=None):
+        if width is None:
+            width = self.width
+
+        if height is None:
+            height = self.height
+
         return pyglet.graphics.vertex_list(
             6,
             ("t2f", flatten(texture_uvs(self.texture))),
-            ("v2f", flatten(quad(x, y, self.width, self.height)))
+            ("v2f", flatten(quad(x, y, width, height)))
         )
+
 
 class Context(Texture):
     def __init__(self, width, height):
@@ -180,10 +189,11 @@ class Context(Texture):
 class Window(Context):
     def __init__(self, width, height):
         super(Window, self).__init__(width, height)
-        self.window = pyglet.window.Window(width, height, resizable=True)
+        self.window = pyglet.window.Window(width, height, resizable=False)
         self.mouse_buttons = set()
         self.mouse_pos = (0, 0)
         self.frame = 0
+        self.fixed_size = (800, 600)
 
         self.vertex_list = self.get_vertex_list(0, 0)
 
@@ -217,7 +227,8 @@ class Window(Context):
 
         @self.window.event
         def on_resize(width, height):
-            self.resize(width, height)
+            if (width, height) != (self.width, self.height):
+                self.resize(width, height)
 
         @self.window.event
         def on_draw():
@@ -398,13 +409,29 @@ class Text(Texture):
         h = int(max(self.label._vertex_lists[0].vertices[1::2]))
         print(w, h, text)
         super(Text, self).__init__(w, h)
-        self.x_scale = 1024 / w
-        self.y_scale = 768 / h
-        self.draw(self.label.draw)
+
+        def draw_label():
+            gl.glMatrixMode(gl.GL_PROJECTION)
+            gl.glLoadIdentity()
+
+            gl.gluOrtho2D(
+                0,
+                800,
+                0,
+                600
+            )
+
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
+            self.label.draw()
+
+        self.draw(draw_label)
+        self.draw_label = draw_label
 
     def _update(self):
         self.clear()
-        self.draw(self.label.draw)
+
+        self.draw(self.draw_label)
 
     @property
     def text(self):
@@ -413,7 +440,6 @@ class Text(Texture):
     @text.setter
     def text(self, value):
         self._text = value
-        self.label.text = value
         self._update()
 
 

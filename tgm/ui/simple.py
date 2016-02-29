@@ -16,7 +16,7 @@ class Button(GameObject):
         callback=FunctionSetting(lambda x: None)
     )
 
-    def create(self, image, text, callback=lambda x: None):
+    def on_create(self, image, text, callback=lambda x: None):
         self.text = text
         self.callback = callback
 
@@ -37,7 +37,7 @@ class Button(GameObject):
 
 
 class TabList(GameObject):
-    def create(self):
+    def on_create(self):
         self.tabs = OrderedDict()
         print(self.dir)
 
@@ -61,7 +61,26 @@ class Pane(GameObject):
         height=NumberSetting(32)
     )
 
-    def create(self, image, width, height):
+    def on_create(self, image, width, height):
         self.sprite = BorderedSprite(self, image, 4)
         self.sprite.width = width
         self.sprite.height = height
+
+
+class TaskBar(GameObject):
+    def on_create(self):
+        self.tablist = TabList(self)
+        self.panes = []
+
+    def select(self, pane):
+        for current_pane in self.panes:
+            current_pane.disabled = current_pane != pane
+
+    def add_task(self, pane, name):
+        self.tablist.add_tab(name, lambda: self.select(pane))
+        self.panes.append(pane)
+
+    def on_add_child(self, child, name=None):
+        if name is not None:
+            self.add_task(child, name)
+            self.select(child)

@@ -4,7 +4,7 @@ from tgm.system import tgm_event
 
 
 class Transform(GameObject):
-    def create(self, x=0, y=0, rotation=0, x_scale=1, y_scale=1):
+    def on_create(self, x=0, y=0, rotation=0, x_scale=1, y_scale=1):
         self._x, self._y, self._rotation, self._x_scale, self._y_scale = (
             x, y, rotation, x_scale, y_scale
         )

@@ -1,40 +1,111 @@
 [
   {
-    "class": "tgm.ui.simple.Pane",
+    "class": "tgm.ui.simple.TaskBar",
+    "arguments": {
+      "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
+      "width": 300,
+      "height": 100
+    },
+    "attributes": {
+      "x": 32,
+      "y": 570
+    },
+    "children": [
+      {
+        "meta": ["Dive"],
+        "class": "tgm.ui.simple.Pane",
         "arguments": {
           "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
           "width": 300,
           "height": 100
         },
-    "attributes": {
-      "x": "600",
-      "y": "300",
-      "depth": "5"
-    },
-    "children": [
-      {
-        "class": "tgm.ui.simple.Button",
-    "arguments": {
-      "text": "Test",
-      "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-      "callback": "print(self.text)"
-    },
         "attributes": {
-          "x": "0",
-          "y": "20"
-        }
+          "x": 100,
+          "y": -100,
+          "depth": 5
+        },
+        "children": [
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "text": "Test",
+              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+              "callback": "print(self.text)"
+            },
+            "attributes": {
+              "x": 0,
+              "y": 20
+            }
+          },
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "text": "Test2",
+              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+              "callback": "self.destroy()"
+            },
+            "attributes": {
+              "x": 0,
+              "y": -20
+            }
+          }
+        ]
       },
       {
-        "class": "tgm.ui.simple.Button",
+        "meta": ["Five"],
+        "class": "tgm.ui.simple.Pane",
         "arguments": {
-          "text": "Test2",
-          "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-          "callback": "self.destroy()"
+          "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
+          "width": 300,
+          "height": 100
         },
         "attributes": {
-          "x": "0",
-          "y": "-20"
-        }
+          "x": 100,
+          "y": -100,
+          "depth": 5
+        },
+        "children": [
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "text": "Woah",
+              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+              "callback": "print(self.text)"
+            },
+            "attributes": {
+              "x": 0,
+              "y": 20
+            }
+          }
+        ]
+      },
+      {
+        "meta": ["Six"],
+        "class": "tgm.ui.simple.Pane",
+        "arguments": {
+          "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
+          "width": 300,
+          "height": 100
+        },
+        "attributes": {
+          "x": 100,
+          "y": -120,
+          "depth": 5
+        },
+        "children": [
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "text": "Yay",
+              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+              "callback": "print(self.text)"
+            },
+            "attributes": {
+              "x": 0,
+              "y": 20
+            }
+          }
+        ]
       }
     ]
   }

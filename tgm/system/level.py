@@ -16,19 +16,29 @@ def load_prefab(target, file):
             arguments = instance_data.get("arguments", {})
             attributes = instance_data.get("attributes", {})
             children = instance_data.get("children", [])
+            meta = instance_data.get("meta", [])
 
             module = import_module(module_name)
             cls = getattr(module, class_name)
 
-            editor_obj = cls.editor
-            parsed_arguments = editor_obj.parse_arguments(
-                cls, file.name, arguments
-            )
+            try:
+                editor_obj = cls.editor
+            except AttributeError:
+                parsed_arguments = {}
+            else:
+                parsed_arguments = editor_obj.parse_arguments(
+                    cls, file.name, arguments
+                )
 
-            instance = cls(current_target, **parsed_arguments)
+            if meta:
+                parent = [current_target] + meta
+            else:
+                parent = current_target
+
+            instance = cls(parent, **parsed_arguments)
 
             for name, value in attributes.items():
-                setattr(instance, name, eval(compile(value, file.name, "eval")))
+                setattr(instance, name, value)
 
             load(instance, children)
 
@@ -36,7 +46,7 @@ def load_prefab(target, file):
 
 
 class Level(GameObject):
-    def create(self, file=None):
+    def on_create(self, file=None):
         if file is not None:
             load_prefab(self, file)
 

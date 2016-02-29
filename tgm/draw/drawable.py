@@ -6,7 +6,7 @@ engine = get_engine()
 
 
 class Sprite(GameObject):
-    def create(self, path):
+    def on_create(self, path):
         self.image = engine.Image(path)
         w = self.image.width / 2
         h = self.image.height / 2
@@ -33,7 +33,7 @@ class Sprite(GameObject):
 
 
 class BorderedSprite(GameObject):
-    def create(self, path, border_size):
+    def on_create(self, path, border_size):
         self.image = engine.Image(path)
         self._width = self.image.width
         self._height = self.image.height
@@ -94,7 +94,7 @@ class BorderedSprite(GameObject):
 
 
 class VertexList(GameObject):
-    def create(self, points, colours=None, uvs=None, texture=None):
+    def on_create(self, points, colours=None, uvs=None, texture=None):
         self.update_map = {
             "points": self.get_points,
             "depth": lambda: self.computed_depth,
@@ -173,7 +173,7 @@ class VertexList(GameObject):
 
 
 class Text(GameObject):
-    def create(self, text):
+    def on_create(self, text):
         self.text = text
         self.texture = engine.Text(text, (0, 0, 0, 255), 12)
         w = self.texture.width / 2

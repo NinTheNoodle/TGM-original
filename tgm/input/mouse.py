@@ -7,7 +7,7 @@ engine = get_engine()
 
 
 class Cursor(GameObject):
-    def create(self):
+    def on_create(self):
         self.mouse_x = 0
         self.mouse_y = 0
         self.down = set()

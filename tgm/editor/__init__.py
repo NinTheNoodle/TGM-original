@@ -1,4 +1,4 @@
 from .settings import (
     EditorObject, TextSetting, FileSetting, FunctionSetting, NumberSetting
 )
-from .base import Editor, TaskBar
+from .base import Editor

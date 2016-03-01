@@ -1,108 +1,66 @@
 [
   {
-    "class": "tgm.ui.simple.TaskBar",
-    "arguments": {
-      "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
-      "width": 300,
-      "height": 100
-    },
-    "attributes": {
-      "x": 32,
-      "y": 570
-    },
+    "class": "tgm.editor.base.Editor",
     "children": [
       {
-        "meta": ["Dive"],
+        "class": "tgm.draw.drawable.Sprite",
+        "arguments": {
+          "path": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/back.png"
+        },
+        "attributes": {
+          "x": 400,
+          "y": 568,
+          "x_scale": 25,
+          "y_scale": 2,
+          "depth": 5
+        }
+      },
+      {
         "class": "tgm.ui.simple.Pane",
         "arguments": {
           "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
-          "width": 300,
-          "height": 100
+          "width": 800,
+          "height": 536
         },
         "attributes": {
-          "x": 100,
-          "y": -100,
-          "depth": 5
-        },
+          "x": 400,
+          "y": 268
+        }
+      },
+      {
+        "meta": ["Home"],
+        "class": "tgm.system.base.Group",
         "children": [
           {
             "class": "tgm.ui.simple.Button",
             "arguments": {
-              "text": "Test",
               "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-              "callback": "print(self.text)"
+              "text": "Button",
+              "callback": "`lambda self: self.destroy()`"
             },
             "attributes": {
-              "x": 0,
-              "y": 20
-            }
-          },
-          {
-            "class": "tgm.ui.simple.Button",
-            "arguments": {
-              "text": "Test2",
-              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-              "callback": "self.destroy()"
-            },
-            "attributes": {
-              "x": 0,
-              "y": -20
+              "x": 400,
+              "y": 284,
+              "depth": -1
             }
           }
         ]
       },
       {
-        "meta": ["Five"],
-        "class": "tgm.ui.simple.Pane",
-        "arguments": {
-          "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
-          "width": 300,
-          "height": 100
-        },
-        "attributes": {
-          "x": 100,
-          "y": -100,
-          "depth": 5
-        },
+        "meta": ["Level"],
+        "class": "tgm.system.base.Group",
         "children": [
           {
             "class": "tgm.ui.simple.Button",
             "arguments": {
-              "text": "Woah",
               "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-              "callback": "print(self.text)"
+              "text": "Press",
+              "callback": "`lambda self: self.destroy()`"
             },
             "attributes": {
-              "x": 0,
-              "y": 20
-            }
-          }
-        ]
-      },
-      {
-        "meta": ["Six"],
-        "class": "tgm.ui.simple.Pane",
-        "arguments": {
-          "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/pane.png",
-          "width": 300,
-          "height": 100
-        },
-        "attributes": {
-          "x": 100,
-          "y": -120,
-          "depth": 5
-        },
-        "children": [
-          {
-            "class": "tgm.ui.simple.Button",
-            "arguments": {
-              "text": "Yay",
-              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-              "callback": "print(self.text)"
-            },
-            "attributes": {
-              "x": 0,
-              "y": 20
+              "x": 300,
+              "y": 284,
+              "depth": -1
             }
           }
         ]

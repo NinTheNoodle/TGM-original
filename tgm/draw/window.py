@@ -12,10 +12,10 @@ class Window(RenderContext):
     }
 
     def on_create(self, width, height):
-        self.window = engine.Window(width, height)
+        self.context = engine.Window(width, height)
 
         def update(dt):
-            self.window.update()
+            self.context.update()
 
             self.parent.tags.select(
                 GameObject[tgm_event.tgm_update_init],
@@ -29,7 +29,17 @@ class Window(RenderContext):
 
             self.parent.tags.select(
                 GameObject[tgm_event.tgm_draw],
-                abort=GameObject[Invisible]
+                abort=GameObject[Invisible],
+                stop=RenderContext
             ).tgm_draw()
 
-        self.window.schedule(update, 1 / 60)
+        self.context.schedule(update, 1 / 60)
+
+
+class View(RenderContext):
+    def create(self, width, height):
+        self.context = engine.Context(width, height)
+
+    @tgm_event
+    def tgm_draw(self):
+        pass

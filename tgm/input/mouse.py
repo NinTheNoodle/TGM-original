@@ -24,7 +24,7 @@ class Cursor(GameObject):
 
     @tgm_event
     def tgm_update_init(self):
-        window = self.tags.get_first(Window < GameObject).window
+        window = self.tags.get_first(Window < GameObject).context
 
         self.mouse_x, self.mouse_y = window.get_mouse_pos()
         prev_down = self.down.copy()

@@ -10,7 +10,6 @@ tgm_event = EventGroup(
     ],
     draw=[
         "draw",
-        "render",
         "depth_update"
     ],
     collision=[

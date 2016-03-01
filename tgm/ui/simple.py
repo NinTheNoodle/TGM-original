@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
-from tgm.system import GameObject, tgm_event, Group
-from tgm.draw import BorderedSprite, Sprite, Text
+from tgm.system import GameObject, tgm_event
+from tgm.draw import BorderedSprite, Text
 from tgm.collision import BoxCollider
 from tgm.input import Cursor
 from tgm.editor import (
@@ -28,6 +28,7 @@ class Button(GameObject):
         self.sprite.width = width
         self.sprite.height = height
         self.label = Text(self, text)
+        self.label.depth = -1
         BoxCollider(self, width / 2, height / 2)
 
     @tgm_event
@@ -78,9 +79,12 @@ class TaskBar(GameObject):
 
     def add_task(self, pane, name):
         self.tablist.add_tab(name, lambda: self.select(pane))
+
+        if self.panes:
+            pane.disabled = True
+
         self.panes.append(pane)
 
     def on_add_child(self, child, name=None):
         if name is not None:
             self.add_task(child, name)
-            self.select(child)

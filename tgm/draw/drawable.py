@@ -108,7 +108,7 @@ class VertexList(GameObject):
         self._texture = texture
         self._uvs = uvs
 
-        self.target = self.tags.get_first(RenderContext < GameObject).window
+        self.target = self.tags.get_first(RenderContext < GameObject).context
 
         self.vertex_list = engine.VertexList(
             self.target,
@@ -190,7 +190,3 @@ class Text(GameObject):
             ),
             texture=self.texture
         )
-        # print(self.x)
-        # self.vertex_list.updates.add("points")
-
-

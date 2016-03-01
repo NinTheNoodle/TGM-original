@@ -382,10 +382,10 @@ class MetaGameObject(type, BaseTag):
             if isinstance(arg, slice):
                 if arg.step is not None:
                     raise ValueError(
-                            "Too many colons in tag attribute assignment")
+                        "Too many colons in tag attribute assignment")
                 if arg.start is None:
                     raise ValueError(
-                            "Misplaced colon in tag attribute assignment")
+                        "Misplaced colon in tag attribute assignment")
                 if not isinstance(arg.start, str):
                     raise ValueError("Tag attribute name must be a string")
                 attributes[arg.start] = arg.stop

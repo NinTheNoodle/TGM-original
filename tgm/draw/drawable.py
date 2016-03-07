@@ -5,6 +5,13 @@ from tgm.draw import RenderContext
 engine = get_engine()
 
 
+def quad(x, y, w, h):
+    return (
+        (x - w, y - h), (x + w, y - h), (x - w, y + h),
+        (x - w, y + h), (x + w, y + h), (x + w, y - h)
+    )
+
+
 class Sprite(GameObject):
     def on_create(self, path):
         self.image = engine.Image(path)
@@ -49,21 +56,15 @@ class BorderedSprite(GameObject):
         )
 
     def _get_pts(self, x, y, w, h, bx, by):
-        return (self._quad(x, y, w - bx * 2, h - by * 2) +
-                self._quad(x - w + bx, y, bx, h - by * 2) +
-                self._quad(x + w - bx, y, bx, h - by * 2) +
-                self._quad(x, y - h + by, w - bx * 2, by) +
-                self._quad(x, y + h - by, w - bx * 2, by) +
-                self._quad(x - w + bx, y - h + by, bx, by) +
-                self._quad(x + w - bx, y + h - by, bx, by) +
-                self._quad(x + w - bx, y - h + by, bx, by) +
-                self._quad(x - w + bx, y + h - by, bx, by))
-
-    def _quad(self, x, y, w, h):
-        return (
-            (x - w, y - h), (x + w, y - h), (x - w, y + h),
-            (x - w, y + h), (x + w, y + h), (x + w, y - h)
-        )
+        return (quad(x, y, w - bx * 2, h - by * 2) +
+                quad(x - w + bx, y, bx, h - by * 2) +
+                quad(x + w - bx, y, bx, h - by * 2) +
+                quad(x, y - h + by, w - bx * 2, by) +
+                quad(x, y + h - by, w - bx * 2, by) +
+                quad(x - w + bx, y - h + by, bx, by) +
+                quad(x + w - bx, y + h - by, bx, by) +
+                quad(x + w - bx, y - h + by, bx, by) +
+                quad(x - w + bx, y + h - by, bx, by))
 
     def _update(self):
         w = self.width / 2
@@ -108,7 +109,7 @@ class VertexList(GameObject):
         self._texture = texture
         self._uvs = uvs
 
-        self.target = self.tags.get_first(RenderContext < GameObject).context
+        self.target = self.tags.get_first(RenderContext).context
 
         self.vertex_list = engine.VertexList(
             self.target,

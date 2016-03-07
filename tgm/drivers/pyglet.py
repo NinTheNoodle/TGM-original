@@ -94,12 +94,12 @@ class Texture(object):
             ("v2f", flatten(quad(offset_x, offset_y, old_width, old_height)))
         )
 
-        self.draw(lambda: vertex_list.draw(gl.GL_TRIANGLES))
+        self.paint(lambda: vertex_list.draw(gl.GL_TRIANGLES))
 
     def clear(self):
-        self.draw(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
+        self.paint(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
 
-    def draw(self, func):
+    def paint(self, func):
         if self.fixed_size is None:
             width = self.width * self.x_scale
             height = self.height * self.y_scale
@@ -129,17 +129,35 @@ class Texture(object):
 
         gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT, 0)
 
-    def get_vertex_list(self, x, y, width=None, height=None):
+    def draw(self, x, y, width=None, height=None):
         if width is None:
             width = self.width
 
         if height is None:
             height = self.height
 
-        return pyglet.graphics.vertex_list(
+        vertex_list = pyglet.graphics.vertex_list(
             6,
             ("t2f", flatten(texture_uvs(self.texture))),
             ("v2f", flatten(quad(x, y, width, height)))
+        )
+        vertex_list.draw(gl.GL_TRIANGLES)
+        vertex_list.delete()
+
+    def get_vertex_list(self, target, depth, x, y, width=None, height=None):
+        if width is None:
+            width = self.width
+
+        if height is None:
+            height = self.height
+
+        return VertexList(
+            target,
+            self.texture,
+            depth,
+            quad(x, y, width, height),
+            None,
+            texture_uvs(self.texture),
         )
 
 
@@ -154,7 +172,7 @@ class Context(Texture):
             vertex_list.update_visibility(frame)
 
     def redraw(self):
-        self.draw(self.batch.draw)
+        self.paint(self.batch.draw)
 
     def add(self, vertex_list):
         self.vertex_lists.append(vertex_list)
@@ -189,13 +207,13 @@ class Context(Texture):
 class Window(Context):
     def __init__(self, width, height):
         super(Window, self).__init__(width, height)
-        self.window = pyglet.window.Window(width, height, resizable=False)
+        self.window = pyglet.window.Window(width, height, resizable=True)
         self.mouse_buttons = set()
         self.mouse_pos = (0, 0)
         self.frame = 0
-        self.fixed_size = (800, 600)
+        # self.fixed_size = (800, 600)
 
-        self.vertex_list = self.get_vertex_list(0, 0)
+        # self.vertex_list = self.get_vertex_list(0, 0)
 
         def mouse_button(button):
             return {
@@ -238,9 +256,9 @@ class Window(Context):
             gl.glLoadIdentity()
             gl.gluOrtho2D(
                 0,
-                self.window.width,
+                1,
                 0,
-                self.window.height
+                1
             )
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -248,12 +266,8 @@ class Window(Context):
             gl.glLoadIdentity()
             gl.glEnable(gl.GL_TEXTURE_2D)
             gl.glBindTexture(self.texture.target, self.texture.id)
-            self.vertex_list.draw(gl.GL_TRIANGLES)
+            self.draw(0, 0, 1, 1)
             gl.glDisable(gl.GL_TEXTURE_2D)
-
-    def resize(self, width, height, offset_x=0, offset_y=0):
-        super(Window, self).resize(width, height, offset_x, offset_y)
-        self.vertex_list = self.get_vertex_list(0, 0)
 
     def get_mouse_buttons(self):
         return self.mouse_buttons.copy()
@@ -407,7 +421,6 @@ class Text(Texture):
         )
         w = int(max(self.label._vertex_lists[0].vertices[::2]))
         h = int(max(self.label._vertex_lists[0].vertices[1::2]))
-        print(w, h, text)
         super(Text, self).__init__(w, h)
 
         def draw_label():
@@ -425,13 +438,13 @@ class Text(Texture):
             gl.glLoadIdentity()
             self.label.draw()
 
-        self.draw(draw_label)
+        self.paint(draw_label)
         self.draw_label = draw_label
 
     def _update(self):
         self.clear()
 
-        self.draw(self.draw_label)
+        self.paint(self.draw_label)
 
     @property
     def text(self):

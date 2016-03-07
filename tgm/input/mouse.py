@@ -1,6 +1,6 @@
-from tgm.system import GameObject, tgm_event, Transform
+from tgm.system import GameObject, tgm_event
 from tgm.drivers import get_engine
-from tgm.draw import RenderContext, Window
+from tgm.draw import RenderContext, Window, Sprite
 from tgm.collision import BoxCollider
 
 engine = get_engine()
@@ -24,7 +24,7 @@ class Cursor(GameObject):
 
     @tgm_event
     def tgm_update_init(self):
-        window = self.tags.get_first(Window < GameObject).context
+        window = self.tags.get_first(Window)
 
         self.mouse_x, self.mouse_y = window.get_mouse_pos()
         prev_down = self.down.copy()

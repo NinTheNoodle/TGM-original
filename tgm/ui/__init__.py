@@ -1,1 +1,2 @@
-from .simple import Button, TabList, TaskBar, Pane
+from .simple import Button, Pane
+from .compound import TaskBar, TabList

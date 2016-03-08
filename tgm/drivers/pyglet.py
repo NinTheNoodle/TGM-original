@@ -27,7 +27,7 @@ class TextureGroup(pyglet.graphics.Group):
 
 class RenderGroup(pyglet.graphics.Group):
     def __init__(self, depth, texture=None):
-        self.depth = depth
+        self.depth = tuple(-x for x in depth)
         if texture is not None:
             self.texture = texture.texture
             super(RenderGroup, self).__init__(parent=TextureGroup())
@@ -42,7 +42,7 @@ class RenderGroup(pyglet.graphics.Group):
     def __lt__(self, other):
         if self.__class__ == other.__class__:
             try:
-                return self.depth > other.depth
+                return self.depth < other.depth
             except TypeError:
                 pass
         return super(RenderGroup, self).__lt__(other)
@@ -77,7 +77,7 @@ class Texture(object):
         self.x_scale = 1
         self.y_scale = 1
 
-    def resize(self, width, height, offset_x=0, offset_y=0):
+    def resize(self, width, height, offset_x=0, offset_y=0, redraw=True):
         old_texture = self.texture
         old_width = self.width
         old_height = self.height
@@ -88,13 +88,14 @@ class Texture(object):
         self.width = width
         self.height = height
 
-        vertex_list = pyglet.graphics.vertex_list(
-            6,
-            ("t2f", flatten(texture_uvs(old_texture))),
-            ("v2f", flatten(quad(offset_x, offset_y, old_width, old_height)))
-        )
+        if redraw:
+            vertex_list = pyglet.graphics.vertex_list(
+                6,
+                ("t2f", flatten(texture_uvs(old_texture))),
+                ("v2f", flatten(quad(offset_x, offset_y, old_width, old_height)))
+            )
 
-        self.paint(lambda: vertex_list.draw(gl.GL_TRIANGLES))
+            self.paint(lambda: vertex_list.draw(gl.GL_TRIANGLES))
 
     def clear(self):
         self.paint(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
@@ -144,26 +145,27 @@ class Texture(object):
         vertex_list.draw(gl.GL_TRIANGLES)
         vertex_list.delete()
 
-    def get_vertex_list(self, target, depth, x, y, width=None, height=None):
-        if width is None:
-            width = self.width
-
-        if height is None:
-            height = self.height
-
-        return VertexList(
-            target,
-            self.texture,
-            depth,
-            quad(x, y, width, height),
-            None,
-            texture_uvs(self.texture),
-        )
+    # def get_vertex_list(self, target, depth, x, y, width=None, height=None):
+    #     if width is None:
+    #         width = self.width
+    #
+    #     if height is None:
+    #         height = self.height
+    #
+    #     return VertexList(
+    #         target,
+    #         self.texture,
+    #         depth,
+    #         quad(x, y, width, height),
+    #         None,
+    #         texture_uvs(self.texture),
+    #     )
 
 
 class Context(Texture):
     def __init__(self, width, height):
         super(Context, self).__init__(width, height)
+        self.frame = 0
         self.vertex_lists = []
         self.batch = pyglet.graphics.Batch()
 
@@ -203,6 +205,11 @@ class Context(Texture):
             self.batch
         )
 
+    def update(self):
+        self.frame += 1
+        self.update_visibility(self.frame)
+        self.redraw()
+
 
 class Window(Context):
     def __init__(self, width, height):
@@ -210,10 +217,6 @@ class Window(Context):
         self.window = pyglet.window.Window(width, height, resizable=True)
         self.mouse_buttons = set()
         self.mouse_pos = (0, 0)
-        self.frame = 0
-        # self.fixed_size = (800, 600)
-
-        # self.vertex_list = self.get_vertex_list(0, 0)
 
         def mouse_button(button):
             return {
@@ -280,11 +283,6 @@ class Window(Context):
 
     def schedule(self, callback, frequency):
         pyglet.clock.schedule_interval(callback, frequency)
-
-    def update(self):
-        self.frame += 1
-        self.update_visibility(self.frame)
-        self.redraw()
 
 
 class Image(Texture):
@@ -413,8 +411,8 @@ class VertexList(object):
 
 
 class Text(Texture):
-    def __init__(self, text, colour, size):
-        self._text = text
+    def __init__(self, text, colour, size, res_width, res_height):
+        self.text = text
         self.label = pyglet.text.Label(
             text, x=0, y=0, anchor_x='left', anchor_y='bottom',
             font_name='Times New Roman', font_size=size, color=colour
@@ -423,37 +421,28 @@ class Text(Texture):
         h = int(max(self.label._vertex_lists[0].vertices[1::2]))
         super(Text, self).__init__(w, h)
 
-        def draw_label():
+        def draw_label(width, height):
             gl.glMatrixMode(gl.GL_PROJECTION)
             gl.glLoadIdentity()
 
             gl.gluOrtho2D(
                 0,
-                800,
+                width,
                 0,
-                600
+                height
             )
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
             self.label.draw()
 
-        self.paint(draw_label)
+        self.paint(lambda: draw_label(res_width, res_height))
         self.draw_label = draw_label
 
-    def _update(self):
+    def update(self, res_width, res_height):
         self.clear()
-
-        self.paint(self.draw_label)
-
-    @property
-    def text(self):
-        return self._text
-
-    @text.setter
-    def text(self, value):
-        self._text = value
-        self._update()
+        #self.resize(res_width, res_height)
+        self.paint(lambda: self.draw_label(res_width, res_height))
 
 
 def flatten(iterator):

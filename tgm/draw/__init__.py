@@ -1,3 +1,3 @@
 from .base import RenderContext
-from .drawable import Sprite, VertexList, BorderedSprite, Text, quad
-from .window import Window, View
+from .drawable import Sprite, VertexList, BorderedSprite, Text, quad, View
+from .window import Window

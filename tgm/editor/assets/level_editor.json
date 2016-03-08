@@ -12,7 +12,7 @@
           "y": 568,
           "x_scale": 25,
           "y_scale": 2,
-          "depth": 5
+          "depth": 500
         }
       },
       {
@@ -32,17 +32,31 @@
         "class": "tgm.system.base.Group",
         "children": [
           {
-            "class": "tgm.ui.simple.Button",
+            "class": "tgm.draw.drawable.View",
             "arguments": {
-              "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-              "text": "Button",
-              "callback": "`lambda self: self.destroy()`"
+              "width": 600,
+              "height": 600
             },
             "attributes": {
               "x": 400,
-              "y": 284,
-              "depth": -1
-            }
+              "y": 300,
+              "depth": -50
+            },
+            "children": [
+              {
+                "class": "tgm.ui.simple.Button",
+                "arguments": {
+                  "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+                  "text": "Button",
+                  "callback": "`lambda self: self.destroy()`"
+                },
+                "attributes": {
+                  "x": 300,
+                  "y": 300,
+                  "depth": -1
+                }
+              }
+            ]
           }
         ]
       },

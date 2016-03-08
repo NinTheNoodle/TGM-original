@@ -19,14 +19,8 @@ class Sprite(GameObject):
         h = self.image.height / 2
         VertexList(
             self,
-            points=(
-                (-w, -h), (w, -h), (-w, h),
-                (-w, h), (w, h), (w, -h)
-            ),
-            uvs=(
-                (0, 0), (1, 0), (0, 1),
-                (0, 1), (1, 1), (1, 0)
-            ),
+            points=quad(0, 0, w, h),
+            uvs=quad(0.5, 0.5, 0.5, 0.5),
             texture=self.image
         )
 
@@ -95,7 +89,8 @@ class BorderedSprite(GameObject):
 
 
 class VertexList(GameObject):
-    def on_create(self, points, colours=None, uvs=None, texture=None):
+    def on_create(self, points, colours=None, uvs=None, texture=None,
+                  target=None):
         self.update_map = {
             "points": self.get_points,
             "depth": lambda: self.computed_depth,
@@ -109,10 +104,13 @@ class VertexList(GameObject):
         self._texture = texture
         self._uvs = uvs
 
-        self.target = self.tags.get_first(RenderContext).context
+        if target is None:
+            self.target = self.tags.get_first(RenderContext)
+        else:
+            self.target = target
 
         self.vertex_list = engine.VertexList(
-            self.target,
+            self.target.context,
             self._texture,
             self.computed_depth,
             self.get_points(),
@@ -129,7 +127,8 @@ class VertexList(GameObject):
 
         for point in self.points:
             x, y, rot, x_scale, y_scale = self.transform.get_transform(
-                transform=point + (0, 1, 1)
+                transform=point + (0, 1, 1),
+                abort=self.target
             )
             rtn.append((x, y))
 
@@ -176,18 +175,49 @@ class VertexList(GameObject):
 class Text(GameObject):
     def on_create(self, text):
         self.text = text
-        self.texture = engine.Text(text, (0, 0, 0, 255), 12)
+        self.target = self.parent.tags.get_first(RenderContext)
+
+        self.texture = engine.Text(
+            text,
+            (0, 0, 0, 255),
+            12,
+            self.target.context.width,
+            self.target.context.height
+        )
+
         w = self.texture.width / 2
         h = self.texture.height / 2
         self.vertex_list = VertexList(
             self,
-            points=(
-                (-w, -h), (w, -h), (-w, h),
-                (-w, h), (w, h), (w, -h)
-            ),
-            uvs=(
-                (0, 0), (1, 0), (0, 1),
-                (0, 1), (1, 1), (1, 0)
-            ),
+            points=quad(0, 0, w, h),
+            uvs=quad(0.5, 0.5, 0.5, 0.5),
             texture=self.texture
         )
+
+    @tgm_event
+    def tgm_update(self):
+        self.texture.update(self.target.context.width,
+                            self.target.context.height)
+
+
+class View(RenderContext):
+    def on_create(self, width, height):
+        self.context = engine.Context(width, height)
+        w = self.context.width / 2
+        h = self.context.height / 2
+        self.vertex_list = VertexList(
+            self,
+            points=quad(0, 0, w, h),
+            uvs=quad(0.5, 0.5, 0.5, 0.5),
+            colours=(
+                (255, 255, 0), (255, 255, 0), (255, 255, 0),
+                (255, 0, 0), (255, 0, 0), (255, 0, 0)
+            ),
+            texture=self.context,
+            target=self.parent.tags.get_first(RenderContext)
+        )
+
+    @tgm_event
+    def tgm_update(self):
+        self.context.clear()
+        self.context.update()

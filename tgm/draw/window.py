@@ -6,12 +6,7 @@ engine = get_engine()
 
 
 class Window(RenderContext):
-    settings = {
-        "width": 800,
-        "height": 600
-    }
-
-    def on_create(self, width, height):
+    def on_create(self, width, height, fps=60):
         self.context = engine.Window(width, height)
 
         def update(dt):
@@ -31,10 +26,10 @@ class Window(RenderContext):
 
             self.tags.select(
                 GameObject[tgm_event.tgm_draw],
-                abort=GameObject[Invisible],
+                abort=GameObject[Invisible]
             ).tgm_draw()
 
-        self.context.schedule(update, 1 / 60)
+        self.context.schedule(update, 1 / fps)
 
     def get_mouse_pos(self):
         x, y = self.context.get_mouse_pos()
@@ -42,16 +37,3 @@ class Window(RenderContext):
 
     def get_mouse_buttons(self):
         return self.context.get_mouse_buttons()
-
-
-class View(RenderContext):
-    def create(self, target, width, height):
-        self.context = engine.Context(width, height)
-        self.target = self.parent.tags.get_first(RenderContext).context
-        self.vertex_list = self.context.get_vertex_list(
-            target, self.computed_depth, 0, 0, width, height)
-
-    @tgm_event
-    def tgm_draw(self):
-        self.vertex_list.update()
-

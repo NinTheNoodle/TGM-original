@@ -200,7 +200,11 @@ def has_tags(candidate, query):
     if isinstance(query, GameObject):
         return False
 
-    return isinstance(candidate, query)
+    try:
+        return isinstance(candidate, query)
+    except TypeError:
+        raise TypeError("'{}' is not a game object or game object "
+                        "class".format(query))
 
 
 class EventGroup(object):

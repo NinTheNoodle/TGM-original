@@ -1,4 +1,4 @@
-from tgm.system import GameObject, common_ancestor
+from tgm.system import GameObject
 from math import sin, cos, atan2, sqrt, radians
 from tgm.system import tgm_event
 
@@ -73,36 +73,36 @@ class Transform(GameObject):
             GameObject[tgm_event.tgm_transform_changed]
         ).tgm_transform_changed()
 
-    def get_parent_transform(self, stop=None):
+    def get_parent_transform(self, stop=None, abort=None):
         try:
             return self.parent.parent.tags.get_first(
-                Transform < GameObject, stop
+                Transform < GameObject, stop, abort
             )
         except (AttributeError, IndexError):
             return None
 
-    def get_transform(self, stop=None, transform=None):
+    def get_transform(self, stop=None, abort=None, transform=None):
         if transform is None:
             transform = self.transform
 
         accumulated_transform = transform
 
-        parent = self.get_parent_transform(stop)
+        parent = self.get_parent_transform(stop, abort)
         while parent is not None:
             accumulated_transform = parent.apply(*accumulated_transform)
-            parent = parent.get_parent_transform(stop)
+            parent = parent.get_parent_transform(stop, abort)
 
         return accumulated_transform
 
-    def get_inverse_transform(self, transform, stop=None):
+    def get_inverse_transform(self, transform, stop=None, abort=None):
         accumulated_transform = transform
 
         parents = []
 
-        parent = self.get_parent_transform(stop)
+        parent = self.get_parent_transform(stop, abort)
         while parent is not None:
             parents.append(parent)
-            parent = parent.get_parent_transform(stop)
+            parent = parent.get_parent_transform(stop, abort)
 
         for parent in reversed(parents):
             accumulated_transform = parent.apply_inverse(*accumulated_transform)

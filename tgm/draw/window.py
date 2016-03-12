@@ -11,8 +11,6 @@ class Window(RenderContext):
 
         def update(dt):
             self.context.update()
-            self.x_scale = self.context.width / width
-            self.y_scale = self.context.height / height
 
             self.tags.select(
                 GameObject[tgm_event.tgm_update_init],
@@ -33,7 +31,9 @@ class Window(RenderContext):
 
     def get_mouse_pos(self):
         x, y = self.context.get_mouse_pos()
-        return self.transform.apply(x, y, 0, 1, 1)[:2]
+        # x /= self.context.width
+        # y /= self.context.height
+        return self.transform.apply(x - 0.5, y - 0.5, 0, 1, 1)[:2]
 
     def get_mouse_buttons(self):
         return self.context.get_mouse_buttons()

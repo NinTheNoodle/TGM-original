@@ -22,21 +22,36 @@ def is_tag(obj):
     return False
 
 
-def get_all(candidate, query, stop=None, abort=None):
+def get_first(candidate, query, stop=None, abort=None):
     if abort is not None and has_tags(candidate, abort):
-        return set()
+        raise IndexError("Abort condition reached")
 
     rtn = run_query(candidate, query)
     if rtn:
         return rtn
 
     if candidate.parent is None:
-        return set()
+        raise IndexError("No more parents")
 
     if stop is not None and has_tags(candidate, stop):
-        return set()
+        raise IndexError("Stop condition reached")
 
-    return get_all(candidate.parent, query, stop, abort)
+    return get_first(candidate.parent, query, stop, abort)
+
+
+def get_all(candidate, query, stop=None, abort=None):
+    if abort is not None and has_tags(candidate, abort):
+        return []
+
+    results = list(run_query(candidate, query))
+
+    if candidate.parent is None:
+        return results
+
+    if stop is not None and has_tags(candidate, stop):
+        return results
+
+    return results + get_all(candidate.parent, query, stop, abort)
 
 
 def select_all(candidate, query, stop=None, abort=None, enabled_only=True):

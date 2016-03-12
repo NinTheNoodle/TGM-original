@@ -64,7 +64,6 @@ class Texture(object):
     def __init__(self, width, height, texture=None):
         self.width = width
         self.height = height
-        self.fixed_size = None
         if texture is None:
             self.texture = pyglet.image.Texture.create(
                 width, height, internalformat=gl.GL_RGBA
@@ -74,10 +73,8 @@ class Texture(object):
 
         buffers = pyglet.image.get_buffer_manager()
         self.col_buffer = buffers.get_color_buffer()
-        self.x_scale = 1
-        self.y_scale = 1
 
-    def resize(self, width, height, offset_x=0, offset_y=0, redraw=True):
+    def resize(self, width, height, redraw=True):
         old_texture = self.texture
         old_width = self.width
         old_height = self.height
@@ -92,7 +89,7 @@ class Texture(object):
             vertex_list = pyglet.graphics.vertex_list(
                 6,
                 ("t2f", flatten(texture_uvs(old_texture))),
-                ("v2f", flatten(quad(offset_x, offset_y, old_width, old_height)))
+                ("v2f", flatten(quad(0, 0, 1, 1)))
             )
 
             self.paint(lambda: vertex_list.draw(gl.GL_TRIANGLES))
@@ -101,22 +98,22 @@ class Texture(object):
         self.paint(lambda: gl.glClear(gl.GL_COLOR_BUFFER_BIT))
 
     def paint(self, func):
-        if self.fixed_size is None:
-            width = self.width * self.x_scale
-            height = self.height * self.y_scale
-        else:
-            width, height = self.fixed_size
-
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        gl.gluOrtho2D(0, width, 0, height)
+        gl.gluOrtho2D(
+            0,
+            self.width,
+            0,
+            self.height
+        )
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
+        gl.glViewport(0, 0, self.width, self.height)
 
         gl.glBindFramebufferEXT(gl.GL_DRAW_FRAMEBUFFER_EXT,
                                 self.col_buffer.gl_buffer)
@@ -144,22 +141,6 @@ class Texture(object):
         )
         vertex_list.draw(gl.GL_TRIANGLES)
         vertex_list.delete()
-
-    # def get_vertex_list(self, target, depth, x, y, width=None, height=None):
-    #     if width is None:
-    #         width = self.width
-    #
-    #     if height is None:
-    #         height = self.height
-    #
-    #     return VertexList(
-    #         target,
-    #         self.texture,
-    #         depth,
-    #         quad(x, y, width, height),
-    #         None,
-    #         texture_uvs(self.texture),
-    #     )
 
 
 class Context(Texture):
@@ -255,21 +236,16 @@ class Window(Context):
         def on_draw():
             gl.glEnable(gl.GL_BLEND)
             gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
             gl.glMatrixMode(gl.GL_PROJECTION)
             gl.glLoadIdentity()
-            gl.gluOrtho2D(
-                0,
-                1,
-                0,
-                1
-            )
-
             gl.glMatrixMode(gl.GL_MODELVIEW)
-
             gl.glLoadIdentity()
+            gl.glViewport(0, 0, self.width, self.height)
+
             gl.glEnable(gl.GL_TEXTURE_2D)
             gl.glBindTexture(self.texture.target, self.texture.id)
-            self.draw(0, 0, 1, 1)
+            self.draw(-1, -1, 2, 2)
             gl.glDisable(gl.GL_TEXTURE_2D)
 
     def get_mouse_buttons(self):
@@ -417,8 +393,11 @@ class Text(Texture):
             text, x=0, y=0, anchor_x='left', anchor_y='bottom',
             font_name='Times New Roman', font_size=size, color=colour
         )
+
+        # Pyglet has no good way of extracting the size of rendered text
         w = int(max(self.label._vertex_lists[0].vertices[::2]))
         h = int(max(self.label._vertex_lists[0].vertices[1::2]))
+
         super(Text, self).__init__(w, h)
 
         def draw_label(width, height):
@@ -434,6 +413,8 @@ class Text(Texture):
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
+            gl.glViewport(0, 0, width, height)
+
             self.label.draw()
 
         self.paint(lambda: draw_label(res_width, res_height))

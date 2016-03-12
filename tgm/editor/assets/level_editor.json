@@ -34,8 +34,8 @@
           {
             "class": "tgm.draw.drawable.View",
             "arguments": {
-              "width": 600,
-              "height": 600
+              "width": 500,
+              "height": 500
             },
             "attributes": {
               "x": 400,
@@ -44,17 +44,23 @@
             },
             "children": [
               {
-                "class": "tgm.ui.simple.Button",
-                "arguments": {
-                  "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
-                  "text": "Button",
-                  "callback": "`lambda self: self.destroy()`"
-                },
-                "attributes": {
-                  "x": 300,
-                  "y": 300,
-                  "depth": -1
-                }
+                "class": "tgm.system.base.Group",
+                "children": [
+                  {
+                    "class": "tgm.ui.simple.Button",
+                    "arguments": {
+                      "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
+                      "text": "Button",
+                      "callback": "`print`",
+                      "width": 50,
+                      "height": 50
+                    },
+                    "attributes": {
+                      "x": 50,
+                      "y": 50
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -69,7 +75,9 @@
             "arguments": {
               "image": "C:/Users/Docopoper/Desktop/Python Projects/In Progress/TGM/tgm/editor/assets/button.png",
               "text": "Press",
-              "callback": "`lambda self: self.destroy()`"
+              "callback": "`lambda self: self.destroy()`",
+              "width": 64,
+              "height": 32
             },
             "attributes": {
               "x": 300,

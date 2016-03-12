@@ -1,6 +1,5 @@
 from tgm.system import GameObject
 from tgm.system import tgm_event
-from tgm.system import Transform
 from collections import defaultdict
 
 

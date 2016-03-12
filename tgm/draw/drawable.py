@@ -1,4 +1,4 @@
-from tgm.system import GameObject, tgm_event
+from tgm.system import GameObject, tgm_event, get_transform_stack
 from tgm.drivers import get_engine
 from tgm.draw import RenderContext
 
@@ -132,6 +132,7 @@ class VertexList(GameObject):
             )
             rtn.append((x, y))
 
+        #print("\n".join(str(x) for x in get_transform_stack(self, abort=self.target)) + "\n\n")
         return rtn
 
     @tgm_event

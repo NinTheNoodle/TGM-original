@@ -111,14 +111,14 @@ class Transform(GameObject):
 
     def apply(self, x, y, rotation, x_scale, y_scale):
         return apply_transform(
-                (x, y, rotation, x_scale, y_scale),
-                self.transform
+            (x, y, rotation, x_scale, y_scale),
+            self.transform
         )
 
     def apply_inverse(self, x, y, rotation, x_scale, y_scale):
         return apply_inverse_transform(
-                (x, y, rotation, x_scale, y_scale),
-                self.transform
+            (x, y, rotation, x_scale, y_scale),
+            self.transform
         )
 
 
@@ -171,3 +171,13 @@ def apply_inverse_transform(original_transform, transformation):
     rotation = (rotation - t_rotation) % 360
 
     return x, y, rotation, x_scale, y_scale
+
+
+def get_transform_stack(obj, stop=None, abort=None):
+    stack = []
+    parents = obj.tags.get_all(GameObject, stop, abort)
+    for parent in parents:
+        acc = parent.transform.get_transform(stop, abort)
+        stack.append((parent, parent.transform.transform, acc))
+
+    return stack

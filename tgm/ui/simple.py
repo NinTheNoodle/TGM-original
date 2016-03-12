@@ -5,12 +5,9 @@ from tgm.input import Cursor
 
 
 class Button(GameObject):
-    def on_create(self, image, text, callback=lambda x: None):
+    def on_create(self, image, text, width, height, callback=lambda x: None):
         self.text = text
         self.callback = callback
-
-        width = 64
-        height = 32
         self.depth = 0
 
         self.sprite = BorderedSprite(self, image, 4)

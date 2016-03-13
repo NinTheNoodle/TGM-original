@@ -176,14 +176,11 @@ class VertexList(GameObject):
 class Text(GameObject):
     def on_create(self, text):
         self.text = text
-        self.target = self.parent.tags.get_first(RenderContext)
 
         self.texture = engine.Text(
             text,
             (0, 0, 0, 255),
-            12,
-            self.target.context.width,
-            self.target.context.height
+            12
         )
 
         w = self.texture.width / 2
@@ -194,11 +191,6 @@ class Text(GameObject):
             uvs=quad(0.5, 0.5, 0.5, 0.5),
             texture=self.texture
         )
-
-    @tgm_event
-    def tgm_update(self):
-        self.texture.update(self.target.context.width,
-                            self.target.context.height)
 
 
 class View(RenderContext):

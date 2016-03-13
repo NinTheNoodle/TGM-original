@@ -9,7 +9,7 @@
         },
         "attributes": {
           "x": 400,
-          "y": 568,
+          "y": 32,
           "x_scale": 25,
           "y_scale": 2,
           "depth": 500
@@ -24,7 +24,7 @@
         },
         "attributes": {
           "x": 400,
-          "y": 268
+          "y": 332
         }
       },
       {
@@ -34,8 +34,8 @@
           {
             "class": "tgm.draw.drawable.View",
             "arguments": {
-              "width": 500,
-              "height": 500
+              "width": 400,
+              "height": 300
             },
             "attributes": {
               "x": 400,
@@ -81,7 +81,7 @@
             },
             "attributes": {
               "x": 300,
-              "y": 284,
+              "y": 316,
               "depth": -1
             }
           }

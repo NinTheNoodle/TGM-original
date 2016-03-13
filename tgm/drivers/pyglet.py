@@ -239,20 +239,28 @@ class Window(Context):
 
             gl.glMatrixMode(gl.GL_PROJECTION)
             gl.glLoadIdentity()
+            gl.gluOrtho2D(
+                0,
+                1,
+                1,
+                0
+            )
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
             gl.glViewport(0, 0, self.width, self.height)
 
             gl.glEnable(gl.GL_TEXTURE_2D)
             gl.glBindTexture(self.texture.target, self.texture.id)
-            self.draw(-1, -1, 2, 2)
+            self.draw(0, 0, 1, 1)
             gl.glDisable(gl.GL_TEXTURE_2D)
 
     def get_mouse_buttons(self):
         return self.mouse_buttons.copy()
 
     def get_mouse_pos(self):
-        return self.mouse_pos
+        x, y = self.mouse_pos
+        y = self.height - y
+        return x, y
 
     def get_keyboard_buttons(self):
         pass
@@ -387,7 +395,7 @@ class VertexList(object):
 
 
 class Text(Texture):
-    def __init__(self, text, colour, size, res_width, res_height):
+    def __init__(self, text, colour, size):
         self.text = text
         self.label = pyglet.text.Label(
             text, x=0, y=0, anchor_x='left', anchor_y='bottom',
@@ -407,8 +415,8 @@ class Text(Texture):
             gl.gluOrtho2D(
                 0,
                 width,
-                0,
-                height
+                height,
+                0
             )
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -417,13 +425,8 @@ class Text(Texture):
 
             self.label.draw()
 
-        self.paint(lambda: draw_label(res_width, res_height))
+        self.paint(lambda: draw_label(w, h))
         self.draw_label = draw_label
-
-    def update(self, res_width, res_height):
-        self.clear()
-        #self.resize(res_width, res_height)
-        self.paint(lambda: self.draw_label(res_width, res_height))
 
 
 def flatten(iterator):

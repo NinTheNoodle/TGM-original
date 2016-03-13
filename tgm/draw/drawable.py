@@ -211,6 +211,6 @@ class View(RenderContext):
         )
 
     @tgm_event
-    def tgm_update(self):
+    def tgm_draw(self):
         self.context.clear()
         self.context.update()

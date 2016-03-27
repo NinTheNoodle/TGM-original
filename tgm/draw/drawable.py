@@ -132,7 +132,6 @@ class VertexList(GameObject):
             )
             rtn.append((x, y))
 
-        #print("\n".join(str(x) for x in get_transform_stack(self, abort=self.target)) + "\n\n")
         return rtn
 
     @tgm_event

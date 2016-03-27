@@ -1,6 +1,6 @@
 from tgm.system import GameObject
 from math import sin, cos, atan2, sqrt, radians
-from tgm.system import tgm_event
+from tgm.system import tgm_event, common_ancestor
 
 
 class Transform(GameObject):
@@ -121,6 +121,13 @@ class Transform(GameObject):
             self.transform
         )
 
+    def get_offset(self, other, transform=None):
+        ancestor = common_ancestor(self, other)
+        intermediate = self.get_transform(
+            abort=ancestor, transform=transform)
+        return other.get_inverse_transform(
+            abort=ancestor, transform=intermediate)
+
 
 def apply_transform(original_transform, transformation):
     x, y, rotation, x_scale, y_scale = original_transform
@@ -155,10 +162,8 @@ def apply_inverse_transform(original_transform, transformation):
 
     x_scale /= t_x_scale
     y_scale /= t_y_scale
-    x /= t_x_scale
-    y /= t_y_scale
 
-    rot = atan2(y, x) + radians(t_rotation)
+    rot = atan2(y, x) - radians(t_rotation)
     dist = sqrt(x * x + y * y)
 
     scale_rot = atan2(y_scale, x_scale) + radians(t_rotation)

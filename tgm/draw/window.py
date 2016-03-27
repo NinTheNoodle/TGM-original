@@ -31,8 +31,6 @@ class Window(RenderContext):
 
     def get_mouse_pos(self):
         x, y = self.context.get_mouse_pos()
-        # x /= self.context.width
-        # y /= self.context.height
         return self.transform.apply(x - 0.5, y - 0.5, 0, 1, 1)[:2]
 
     def get_mouse_buttons(self):

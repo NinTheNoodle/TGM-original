@@ -15,12 +15,17 @@ class Button(GameObject):
         self.sprite.height = height
         self.label = Text(self, text)
         self.label.depth = -1
-        BoxCollider(self, width / 2, height / 2)
+        BoxCollider(self, width, height)
 
     @tgm_event
     def tgm_update(self):
-        if self.collisions(Cursor[lambda x: "L" in x.pressed]):
+        if self.collisions(Cursor):#[lambda x: "L" in x.pressed]
+            from random import random
+            print(random())
             self.callback(self)
+        #self.y_scale = 1
+        self.x_scale = 2
+        self.rotation += 1
 
 
 class Pane(GameObject):

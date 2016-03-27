@@ -321,6 +321,17 @@ class TagStore(object):
         return has_tags(self.owner, query)
 
 
+class ParentsSelector(object):
+    def __init__(self, owner):
+        self.owner = owner
+
+    def __getitem__(self, item):
+        try:
+            return self.owner.parent.tags.get_first(item)
+        except (IndexError, AttributeError):
+            return None
+
+
 class BaseTag(object):
     def __and__(self, other):
         return TagGroup(self, other, "&")
@@ -434,6 +445,7 @@ class GameObject(object, metaclass=MetaGameObject):
         game_objects.add(self)
 
         self.parent = parent
+        self.parents = ParentsSelector(self)
 
         class_dict = {}
         for cls in reversed(self.__class__.mro()):
@@ -444,8 +456,7 @@ class GameObject(object, metaclass=MetaGameObject):
                 if value in auto_call:
                     auto_call[value](self, name)
 
-        if hasattr(self, "on_create"):
-            self.on_create(*args, **kwargs)
+        self.on_create(*args, **kwargs)
 
     def destroy(self):
         destroyed_game_objects.add(self)
@@ -455,6 +466,9 @@ class GameObject(object, metaclass=MetaGameObject):
         if self.parent is not None:
             self.on_remove_child(self)
             self.parent.children.remove(self)
+
+    def on_create(self):
+        pass
 
     def on_destroy(self):
         pass

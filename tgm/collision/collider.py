@@ -1,182 +1,96 @@
-from tgm.system import GameObject
-from tgm.system import tgm_event
-from collections import defaultdict
-
-
-collider_updates = set()
+from tgm.system import GameObject, tgm_event, common_ancestor
+from tgm.collision.collision_tests import point_in_polygon
 
 
 class Collider(GameObject):
-    def on_create(self):
-        self.bbox = [0, 0, 0, 0]
-        self.points = []
-        self.registered = False
-        self.tgm_transform_changed()
+    partition_threshold = 10
 
-    @property
-    def transformed_bbox(self):
-        transform = self.transform.get_transform()
-        return (
-            self.bbox[0] + transform[0],
-            self.bbox[1] + transform[1],
-            self.bbox[2] + transform[0],
-            self.bbox[3] + transform[1]
-        )
-
-    def set_points(self, *points):
+    def on_create(self, points):
         self.points = points
-        self.update_bbox()
+        self.optimizations = {}
+        self.colliders = set()
 
-    def update_bbox(self):
-        if self.points:
-            x_zip, y_zip = zip(*self.points)
-            self.bbox = [min(x_zip), min(y_zip), max(x_zip), max(y_zip)]
-        else:
-            self.bbox = [0, 0, 0, 0]
-        self.update_world_mapping()
+    def register_collider(self, collider):
+        self.colliders.add(collider)
 
-    def update_world_mapping(self):
-        world = self.tags.get_first(CollisionWorld < GameObject)
-        if self.registered:
-            world.unregister_collider(self, *self.bbox)
-        self.registered = True
-        world.register_collider(self, *self.bbox)
-
-    def is_colliding(self, other):
-        raise NotImplemented("No collision test provided")
+    def unregister_collider(self, collider):
+        self.colliders.remove(collider)
 
     @tgm_event
     def tgm_get_collisions(self, query=GameObject):
-        update_colliders()
-        world = self.tags.get_first(CollisionWorld < GameObject)
-        possible = world.get_possible_collisions(1, query)
-        collisions = []
+        return self.parents[CollisionMask].get_collisions(self, query)
 
-        for collider in possible:
-            if collider is not self and self.is_colliding(collider):
-                collisions.append(collider)
+    def get_collisions(self, collider, query=GameObject):
+        if self.is_colliding(collider):
+            return {self.parent}
+        return set()
 
-        return collisions
+    def is_colliding(self, other):
+        return self.optimizations.get(type(other), self.collision_poly)(other)
 
-    @tgm_event
-    def tgm_transform_changed(self):
-        collider_updates.add(self)
+    def collision_disc(self, other):
+        return True
+
+    def collision_poly(self, other):
+        if not self.collision_disc(other):
+            return False
+
+        obj1 = self
+        obj2 = other
+
+        points = obj1.get_transformed_points(obj2)
+
+        for x, y in obj2.points:
+            if obj1.contains_point(x, y, points):
+                return True
+
+        for x, y in points:
+            if obj2.contains_point(x, y):
+                return True
+
+        return False
+
+    def contains_point(self, x, y, points=None):
+        if points is None:
+            points = self.points
+        return point_in_polygon(x, y, points)
+
+    def get_transformed_points(self, other):
+        rtn = []
+
+        for point in self.points:
+            x, y, rot, x_scale, y_scale = self.transform.get_offset(
+                other.transform, point + (0, 1, 1)
+            )
+            rtn.append((x, y))
+
+        return rtn
+
+
+class CollisionMask(Collider):
+    def get_collisions(self, collider, query=GameObject):
+        found = set()
+        if True or self.is_colliding(collider):
+            for col in self.tags.select((Collider - self) < query):
+                found.update(col.get_collisions(collider, query))
+        return found
 
 
 class BoxCollider(Collider):
     def on_create(self, width, height):
-        super(BoxCollider, self).on_create()
-        self.set_points(
-            (-width / 2, -height / 2),
-            (width / 2, -height / 2),
-            (width / 2, height / 2),
-            (-width / 2, height / 2)
-        )
-
-    def is_colliding(self, other):
-        if isinstance(other, BoxCollider):
-            transform = self.transform.get_transform()
-            bbox = (
-                self.bbox[0] + transform[0],
-                self.bbox[1] + transform[1],
-                self.bbox[2] + transform[0],
-                self.bbox[3] + transform[1]
-            )
-            transform = other.transform.get_transform()
-            other_bbox = (
-                self.bbox[0] + transform[0],
-                self.bbox[1] + transform[1],
-                self.bbox[2] + transform[0],
-                self.bbox[3] + transform[1]
-            )
-            return collision_rectangle(bbox, other_bbox)
-        raise NotImplemented("")
-
-    def contains_point(self, x, y):
-        return point_in_rectangle(x, y, *self.bbox)
+        width /= 2
+        height /= 2
+        super().on_create([
+            (-width, -height),
+            (width, -height),
+            (width, height),
+            (-width, height)
+        ])
 
 
-class AABBCollider(Collider):
-    def is_colliding(self, other):
-        if isinstance(other, AABBCollider):
-            return collision_rectangle(self.bbox, other.bbox)
-        raise NotImplemented("")
+class Collision(object):
+    def __init__(self):
+        self.objects = set()
 
-    def contains_point(self, x, y):
-        return point_in_rectangle(x, y, *self.bbox)
-
-
-class CompositeCollider(Collider):
-    pass
-
-
-class CollisionWorld(GameObject):
-    def on_create(self):
-        self.world = defaultdict(lambda: set())
-        self.resolution = 256
-
-    def unregister_collider(self, collider, x1, y1, x2, y2):
-        for x, y in zip(
-                range(0, int(x2 - x1), self.resolution),
-                range(0, int(y2 - y1), self.resolution)):
-            pos = (x + x1, y + y1)
-            self.world[pos].remove(collider)
-            if not self.world[pos]:
-                del self.world[pos]
-
-    def register_collider(self, collider, x1, y1, x2, y2):
-        for x, y in zip(
-                range(0, int(x2 - x1), self.resolution),
-                range(0, int(y2 - y1), self.resolution)):
-            self.world[(x + x1, y + y1)].add(collider)
-
-    def get_possible_collisions(self, bbox, query):
-        return self.parent.tags.select(Collider < query)
-
-
-def update_colliders():
-    for collider in collider_updates:
-        collider.update_bbox()
-    collider_updates.clear()
-
-
-def collision_rectangle(rect1, rect2):
-    return (rect2[2] > rect1[0] and
-            rect2[3] > rect1[1] and
-            rect1[2] > rect2[0] and
-            rect1[3] > rect2[1])
-
-
-def point_in_rectangle(x, y, x1, y1, x2, y2):
-    return x1 < x < x2 and y1 < y < y2
-
-
-# http://www.ariel.com.au/a/python-point-int-poly.html
-def point_inside_polygon(x, y, poly):
-    n = len(poly)
-    inside = False
-
-    p1x, p1y = poly[0]
-    for i in range(n+1):
-        p2x, p2y = poly[i % n]
-        if y > min(p1y, p2y):
-            if y <= max(p1y, p2y):
-                if x <= max(p1x, p2x):
-                    if p1y != p2y:
-                        xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                    if p1x == p2x or x <= xinters:
-                        inside = not inside
-        p1x, p1y = p2x, p2y
-
-    return inside
-
-
-def collision_polygon(poly1, poly2):
-    return False
-
-
-def collision_circle(circle1, circle2):
-    return abs(
-            (circle1[0] ** 2 + circle1[1] ** 2) ** 0.5 -
-            (circle2[0] ** 2 + circle2[1] ** 2) ** 0.5
-    ) < circle2[2] + circle2[2]
+    def __bool__(self):
+        return bool(self.objects)

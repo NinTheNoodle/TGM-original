@@ -13,12 +13,12 @@ class Cursor(GameObject):
         self.down = set()
         self.pressed = set()
         self.released = set()
-        BoxCollider(self, 1, 1)
+        BoxCollider(self, 32, 32)
 
     @tgm_event
     def tgm_draw(self):
         self.transform.transform = self.transform.get_inverse_transform(
-            (self.mouse_x, self.mouse_y, 0, 0.2, 0.2),
+            (self.mouse_x, self.mouse_y, 45, 1, 1),
             GameObject[RenderContext]
         )
 

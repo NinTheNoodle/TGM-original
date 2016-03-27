@@ -30,7 +30,6 @@ class TaskBar(GameObject):
     def on_create(self):
         self.tablist = ButtonList(self, False)
         self.panes = []
-        self.rotation = 45
 
     def select(self, pane):
         for current_pane in self.panes:

@@ -18,7 +18,7 @@ class Cursor(GameObject):
     @tgm_event
     def tgm_draw(self):
         self.transform.transform = self.transform.get_inverse_transform(
-            (self.mouse_x, self.mouse_y, 45, 1, 1),
+            (self.mouse_x, self.mouse_y, 0, 0.25, 0.25),
             GameObject[RenderContext]
         )
 

@@ -19,13 +19,8 @@ class Button(GameObject):
 
     @tgm_event
     def tgm_update(self):
-        if self.collisions(Cursor):#[lambda x: "L" in x.pressed]
-            from random import random
-            print(random())
+        if self.collisions(Cursor[lambda x: "L" in x.pressed]):
             self.callback(self)
-        #self.y_scale = 1
-        self.x_scale = 2
-        self.rotation += 1
 
 
 class Pane(GameObject):

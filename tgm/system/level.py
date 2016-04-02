@@ -1,7 +1,7 @@
 import json
 from importlib import import_module
 
-from tgm.system import GameObject
+from tgm.system import GameObject, parse_path
 import tgm
 
 
@@ -26,7 +26,7 @@ def parse_argument(cls, data, argument_name, path):
 
 def load_prefab(target, file):
     if isinstance(file, str):
-        with open(file) as fl:
+        with open(parse_path(file)) as fl:
             return load_prefab(target, fl)
     data = json.load(file)
 

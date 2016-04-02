@@ -1,6 +1,7 @@
 import os
 import sys
 import pkgutil
+from importlib import import_module
 
 from tgm.system import GameObject
 
@@ -12,6 +13,7 @@ hidden_files = {}
 def register(package):
     paths = sys.modules[package].__path__
 
+    # Load every file in the package
     for path in paths:
         for fname in os.listdir(path):
             fpath = os.path.join(path, fname)
@@ -21,6 +23,7 @@ def register(package):
             if os.path.isfile(fpath):
                 files.setdefault(package, set()).add(fpath)
 
+    # Load every module in the package
     for loader, name, is_package in pkgutil.iter_modules(paths):
         if name.startswith("_"):
             if name == "__init__":
@@ -28,6 +31,7 @@ def register(package):
             if not (name.startswith("__") and name.endswith("__")):
                 continue
         module = loader.find_module(name).load_module(name)
+        # Register sub-packages
         if is_package:
             register(module.__package__)
 
@@ -54,6 +58,18 @@ def get_hidden_files(package=None):
 
 def get_entity_classes():
     return set(iter_subclasses(GameObject))
+
+
+def parse_path(path):
+    path = os.path.normpath(path)
+
+    path_segments = path.split(os.path.sep)
+    if "." in path_segments[0] and path_segments[0] not in [".", ".."]:
+        module = import_module(path_segments[0])
+        path_segments[0] = os.path.dirname(module.__file__)
+        path = os.path.join(*path_segments)
+
+    return path
 
 
 # https://code.activestate.com/recipes

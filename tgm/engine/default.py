@@ -7,8 +7,6 @@ class DefaultEngine(GameObject):
     def on_create(self):
         cursor = Cursor(self)
         cursor.depth = -1
-        s = Sprite(cursor,
-                   r"C:\Users\Docopoper\Desktop\Python Projects\In Progress"
-                   r"\TGM\tgm\editor\assets\button.png")
+        s = Sprite(cursor, "tgm.engine/assets/cursor.png")
 
         s.depth = -1000

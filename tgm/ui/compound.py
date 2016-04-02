@@ -15,8 +15,7 @@ class ButtonList(GameObject):
         self.tabs[button]()
 
     def add_button(self, name, callback):
-        icon = r"C:\Users\Docopoper\Desktop\Python Projects" \
-               r"\In Progress\TGM\tgm\editor\assets\button.png"
+        icon = "tgm.ui/assets/button.png"
         button = Button(self, icon, name, 64, 32,
                         lambda x: self.click_button(name))
         if self._vertical:

@@ -1,4 +1,4 @@
-from tgm.system import GameObject, tgm_event, get_transform_stack
+from tgm.system import GameObject, tgm_event, parse_path
 from tgm.drivers import get_engine
 from tgm.draw import RenderContext
 
@@ -14,7 +14,7 @@ def quad(x, y, w, h):
 
 class Sprite(GameObject):
     def on_create(self, path):
-        self.image = engine.Image(path)
+        self.image = engine.Image(parse_path(path))
         w = self.image.width / 2
         h = self.image.height / 2
         VertexList(
@@ -35,7 +35,7 @@ class Sprite(GameObject):
 
 class BorderedSprite(GameObject):
     def on_create(self, path, border_size):
-        self.image = engine.Image(path)
+        self.image = engine.Image(parse_path(path))
         self._width = self.image.width
         self._height = self.image.height
         self._border_size = border_size

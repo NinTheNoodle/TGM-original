@@ -1,0 +1,140 @@
+[
+  {
+    "class": "tgm.editor.base.Editor",
+    "children": [
+      {
+        "class": "tgm.draw.drawable.Sprite",
+        "arguments": {
+          "path": "tgm.ui/assets/back.png"
+        },
+        "attributes": {
+          "x": 400,
+          "y": 32,
+          "x_scale": 25,
+          "y_scale": 2,
+          "depth": 500
+        }
+      },
+      {
+        "class": "tgm.ui.simple.Pane",
+        "arguments": {
+          "image": "tgm.ui/assets/pane.png",
+          "width": 800,
+          "height": 536
+        },
+        "attributes": {
+          "x": 400,
+          "y": 332
+        }
+      },
+      {
+        "meta": ["Home"],
+        "class": "tgm.system.base.Group",
+        "children": [
+          {
+            "class": "sample_game.game.Rotater",
+            "arguments": {
+              "rot": 1
+            },
+            "attributes": {
+              "x": 300,
+              "y": 316,
+              "depth": -1
+            },
+            "children": [
+              {
+                "class": "tgm.ui.simple.Button",
+                "arguments": {
+                  "image": "tgm.ui/assets/button.png",
+                  "text": "Press",
+                  "callback": "`lambda self: setattr(self, 'rotation', self.rotation - 22.5)`",
+                  "width": 64,
+                  "height": 32
+                }
+              },
+              {
+                "class": "sample_game.game.Rotater",
+                "arguments": {
+                  "rot": -1
+                },
+                "attributes": {
+                  "x": 160,
+                  "y_scale": 4,
+                  "x_scale": 1.5
+                },
+                "children": [
+                  {
+                    "class": "sample_game.game.Rotater",
+                    "arguments": {
+                      "rot": 5
+                    },
+                    "attributes": {
+                      "y_scale": 0.5,
+                      "depth": -1
+                    },
+                    "children": [
+                      {
+                        "class": "tgm.ui.simple.Button",
+                        "arguments": {
+                          "image": "tgm.ui/assets/button.png",
+                          "text": "Press",
+                          "callback": "`lambda self: setattr(self, 'rotation', self.rotation - 22.5)`",
+                          "width": 64,
+                          "height": 32
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "meta": ["Level"],
+        "class": "tgm.system.base.Group",
+        "children": [
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "image": "tgm.ui/assets/button.png",
+              "text": "Delete",
+              "callback": "`lambda self: self.destroy()`",
+              "width": 64,
+              "height": 32
+            },
+            "attributes": {
+              "x": 400,
+              "y": 316,
+              "depth": -1
+            }
+          }
+        ]
+      },
+      {
+        "meta": ["More"],
+        "class": "tgm.system.base.Group",
+        "children": [
+          {
+            "class": "tgm.ui.simple.Button",
+            "arguments": {
+              "image": "tgm.ui/assets/button.png",
+              "text": "Rotate",
+              "callback": "`lambda self: setattr(self, 'rotation', self.rotation + 22.5)`",
+              "width": 64,
+              "height": 32
+            },
+            "attributes": {
+              "x": 200,
+              "y": 416,
+              "x_scale": 2,
+              "y_scale": 2,
+              "depth": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

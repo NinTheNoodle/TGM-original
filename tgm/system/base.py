@@ -466,12 +466,8 @@ class GameObject(object, metaclass=MetaGameObject):
         if self.parent is not None:
             self.on_remove_child(self)
             self.parent.children.remove(self)
-        print("D", self)
         import gc
         gc.collect()
-
-    def __del__(self):
-        print("Gah", self, self.parent)
 
     def on_create(self):
         pass
